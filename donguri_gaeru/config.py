@@ -29,12 +29,9 @@ except FileNotFoundError:
             "discord": {
                 "token": input("Enter a Discord bot token: "),
                 "default_prefix": ";",
-                "administrators": [712104395747098656]
+                "administrators": [712104395747098656],
             },
-            "database": {
-                "path": "database.db3",
-                "backup_interval": 30  # in minutes
-            },
+            "database": {"path": "database.db3", "backup_interval": 30},  # in minutes
             "glicko2": {
                 "standard_rating": 1500,
                 "standard_rd": 140,
@@ -43,20 +40,21 @@ except FileNotFoundError:
                 "convergence_tolerance": 0.000001,
                 "rating_period": {
                     "length": 72,  # in hours
-                    "start": "2021-08-02 0:00:00"  # %Y-%m-%d %H:%M:%S
-                }
+                    "start": "2021-08-02 0:00:00",  # %Y-%m-%d %H:%M:%S
+                },
             },
             "matchmaking": {
                 "pending_match_lifetime": 5,  # in minutes
                 "in_progress_match_lifetime": 60,  # in minutes
                 "cancel_match_lifetime": 5,  # in minutes
-                "first_to": 7
-            }
+                "first_to": 7,
+            },
         }
 
-        if input(
-                "Would you like to stop start up to configure the settings? (y/N) "
-        ) == "y":
+        if (
+            input("Would you like to stop start up to configure the settings? (y/N) ")
+            == "y"
+        ):
             print("Quitting...")
             sys.exit(0)
         else:

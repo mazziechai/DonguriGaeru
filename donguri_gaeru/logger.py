@@ -13,11 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
+import logging
 
-bot = None  # This is to prevent recursive imports when something needs the bot instance
+from config import config
 
+logger = logging.getLogger("discord")
+logger.setLevel(config["log_level"])
 
-def escape_markdown(text):
-    return re.sub(r"\\\\([_*\[\]()~`>\#\+\-=|\.!])", r"\1",
-                  re.sub(r"([_*\[\]()~`>\#\+\-=|\.!])", r"\\\1", text))
+formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
+
+file_handler = logging.FileHandler(
+    filename="dongurigaeru.log", encoding="utf-8", mode="w"
+)
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
