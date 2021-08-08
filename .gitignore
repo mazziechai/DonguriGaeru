@@ -1,4 +1,1 @@
-.vscode/
-venv/
-*.db3
-*.log
+poetry.lock

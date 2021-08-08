@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "donguri-gaeru"
+version = "0.1.0"
+description = "A web-based Puyo Puyo ranking system with Discord integration."
+authors = ["amosborne (terramyst)", "mazziechai (ferret)"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+"discord.py" = "^1.7.3"
+SQLAlchemy = "^1.4.22"
+Flask = "^2.0.1"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.14.0"
+isort = "^5.9.3"
+black = "^21.7b0"
+flake9 = "^3.8.3"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

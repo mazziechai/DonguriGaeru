@@ -18,16 +18,15 @@ import re
 from pathlib import Path
 
 import discord
-from discord.ext import commands
-
 from config import config
 from core import database, utils
+from discord.ext import commands
 from logger import logger
 
-
-bot = commands.Bot(command_prefix=",",
-                   activity=discord.Activity(
-                       type=discord.ActivityType.listening, name=";help"))
+bot = commands.Bot(
+    command_prefix=",",
+    activity=discord.Activity(type=discord.ActivityType.listening, name=";help"),
+)
 
 utils.bot = bot
 
@@ -36,8 +35,7 @@ file_directory = Path(__file__).parent.resolve()
 
 for cog in (file_directory / "cogs").resolve().glob(r"**/*"):
     relative_path = re.sub(r"(.+)(dongurigaeru.)", "", str(cog))
-    bot.load_extension(
-        re.sub(r"[\\\/]", ".", relative_path).replace(".py", ""))
+    bot.load_extension(re.sub(r"[\\\/]", ".", relative_path).replace(".py", ""))
 
 
 # Setting our events
