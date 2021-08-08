@@ -1,4 +1,4 @@
-![Acorn Frog](donguri-gaeru.png)
+![Acorn Frog](donguri_gaeru.png)
 
 ## Software Development Environment
 
