@@ -1,6 +1,4 @@
-# Donguri Gaeru
-A web-based Puyo Puyo ranking system with Discord integration.
-![Acorn Frog](https://static.wikia.nocookie.net/arleandcarbuncle/images/5/56/Tumblr_owotplRd301wsmahjo1_400_%281%29.png/revision/latest/scale-to-width-down/368?cb=20191012152028)
+![Acorn Frog](donguri-gaeru.png)
 
 ## Software Development Environment
 
