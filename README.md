@@ -10,6 +10,14 @@ poetry install
 poetry run pre-commit install
 ```
 
+Executing the software requires a private configuration file, `config.py`. Below is a template to be placed at the top level of the repository. Fill it in with the appropriate information for your execution environment.
+
+```
+SQL_URL = "postgresql://postgres:password@localhost/puyodb"
+```
+
+PostgreSQL is used as the underlying database. Download it [here](https://www.postgresql.org/download/).
+
 ## Specifications and plans
 
 ### General stuff
