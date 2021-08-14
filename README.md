@@ -18,6 +18,8 @@ SQL_URL = "postgresql://postgres:password@localhost/puyodb"
 
 PostgreSQL is used as the underlying database. Download it [here](https://www.postgresql.org/download/).
 
+A subset of [Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) is stored as a test database on [Heroku](www.heroku.com). Accessing the database requires the creation of a free account, requesting access credentials from the development team, and installing the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
+
 ## Specifications and plans
 
 ### General stuff
