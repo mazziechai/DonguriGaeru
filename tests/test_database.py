@@ -3,11 +3,16 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from sqlalchemy_utils import create_database, database_exists
 
 from config import SQL_URL
 from donguri_gaeru.database import Base, Match, Player
 
 dbengine = create_engine(SQL_URL)
+if not database_exists(dbengine.url):
+    create_database(dbengine.url)
+else:
+    Base.metadata.drop_all(dbengine)
 
 
 @pytest.fixture
