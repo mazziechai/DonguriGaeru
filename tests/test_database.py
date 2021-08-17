@@ -5,8 +5,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, database_exists
 
-from config import SQL_URL
+from config import LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
 from donguri_gaeru.database import Base, Match, Player
+
+SQL_URL = "postgresql://{}:{}@localhost/test_database_db".format(
+    LOCAL_SQL_USERNAME, LOCAL_SQL_PASSWORD
+)
 
 dbengine = create_engine(SQL_URL)
 if not database_exists(dbengine.url):

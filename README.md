@@ -13,12 +13,13 @@ poetry run pre-commit install
 Executing the software requires a private configuration file, `config.py`. Below is a template to be placed at the top level of the repository. Fill it in with the appropriate information for your execution environment.
 
 ```
-SQL_URL = "postgresql://postgres:password@localhost/puyodb"
+LOCAL_SQL_USERNAME = "postgres"
+LOCAL_SQL_PASSWORD = "password"
 ```
 
 PostgreSQL is used as the underlying database. Download it [here](https://www.postgresql.org/download/).
 
-A subset of [Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) is stored as a test database on [Heroku](www.heroku.com). Accessing the database requires the creation of a free account, requesting access credentials from the development team, and installing the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
+A subset of [Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) is stored as a test database on [Heroku](www.heroku.com). Accessing the database requires the creation of a free account, requesting access credentials from the development team, and installing the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli). The database may also be instantiated locally via the command line script `poetry run hikuwr -l`.
 
 ## Specifications and plans
 
