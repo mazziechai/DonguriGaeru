@@ -2,7 +2,7 @@
 
 ## Software Development Environment
 
-The Python development environment is managed by [Poetry](https://python-poetry.org/) with automated formatting and syntax checking performed via [pre-commit](https://pre-commit.com/). After cloning the repository, setting up the software development environment is easy.
+The Python development environment is managed by [Poetry](https://python-poetry.org/) with automated formatting, syntax checking, and test execution performed via [pre-commit](https://pre-commit.com/). After cloning the repository, setting up the software development environment is easy.
 
 ```
 pip install poetry
@@ -12,14 +12,16 @@ poetry run pre-commit install
 
 Executing the software requires a private configuration file, `config.py`. Below is a template to be placed at the top level of the repository. Fill it in with the appropriate information for your execution environment.
 
-```
+```python
+# LOCAL_SQL provides private access credentials to a PostgreSQL server.
 LOCAL_SQL_USERNAME = "postgres"
 LOCAL_SQL_PASSWORD = "password"
+LOCAL_SQL_HOSTNAME = "localhost"
 ```
 
 PostgreSQL is used as the underlying database. Download it [here](https://www.postgresql.org/download/).
 
-A subset of [Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) is stored as a test database on [Heroku](www.heroku.com). Accessing the database requires the creation of a free account, requesting access credentials from the development team, and installing the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli). The database may also be instantiated locally via the command line script `poetry run hikuwr -l`.
+[Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) can be instantiated as a test database with the command line script `poetry run hikuwr` (use the `--help` option for more detail). The database can be created either at the server specified in the private configuration file or on the cloud via a free-tier [Heroku](www.heroku.com) account and the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
 
 ## Specifications and plans
 

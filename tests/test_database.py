@@ -3,31 +3,38 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from sqlalchemy_utils import create_database, database_exists
+from sqlalchemy_utils import create_database, drop_database
 
-from config import LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
+from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
 from donguri_gaeru.database import Base, Match, Player
 
-SQL_URL = "postgresql://{}:{}@localhost/test_database_db".format(
-    LOCAL_SQL_USERNAME, LOCAL_SQL_PASSWORD
-)
 
-dbengine = create_engine(SQL_URL)
-if not database_exists(dbengine.url):
-    create_database(dbengine.url)
-else:
-    Base.metadata.drop_all(dbengine)
+@pytest.fixture(scope="module")
+def dbengine():
+    sql = "postgresql://{username}:{password}@{hostname}/{database}"
+    url = sql.format(
+        username=LOCAL_SQL_USERNAME,
+        password=LOCAL_SQL_PASSWORD,
+        hostname=LOCAL_SQL_HOSTNAME,
+        database="test_database",
+    )
+    create_database(url)
+    engine = create_engine(url)
+
+    yield engine
+
+    engine.dispose()
+    drop_database(url)
 
 
-@pytest.fixture
-def dbsession():
+@pytest.fixture(scope="function")
+def dbsession(dbengine):
     Base.metadata.create_all(dbengine)
-    connection = dbengine.connect()
-    session = Session(bind=connection)
-    yield session
-    session.close()
-    connection.close()
-    Base.metadata.drop_all(dbengine)
+    with dbengine.connect() as connection:
+        with Session(bind=connection) as session:
+            yield session
+
+        Base.metadata.drop_all(dbengine)
 
 
 def test_player(dbsession):
@@ -104,9 +111,9 @@ def test_match(dbsession):
     test_match.active = False
     test_match.handshakeA = True
     dbsession.commit()
-    assert dbsession.query(Match).first().active is False
-    assert dbsession.query(Match).first().handshake is False
+    assert not dbsession.query(Match).first().active
+    assert not dbsession.query(Match).first().handshake
 
     test_match.handshakeB = True
     dbsession.commit()
-    assert dbsession.query(Match).first().handshake is True
+    assert dbsession.query(Match).first().handshake
