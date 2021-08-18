@@ -4,26 +4,36 @@ import re
 import subprocess
 from datetime import datetime, timezone
 
+from progress.bar import Bar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, database_exists
 
-from config import LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
+from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
 from donguri_gaeru.database import Base, Match, Player
 
-DATE_REGEX = r"^(\d\d/\d\d/\d\d)$"
-GAME_REGEX = r"^(\S+) (\d+) (\d+) (\S+)$"
-HEROKU_ROW_LIMIT = 9950  # 50 rows margin against 10000 limit
-
 parser = argparse.ArgumentParser(
-    description="Create a test database from Hiku's World Ranking dataset."
+    description=(
+        "Create a test database from Hiku's World Ranking dataset. "
+        'Default is "--local hikuwr".'
+    ),
+    formatter_class=argparse.RawTextHelpFormatter,
 )
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
-    "-l", "--local", action="store_true", help="create database on local machine"
+    "-l",
+    "--local",
+    nargs="?",
+    const="hikuwr",
+    default="hikuwr",
+    metavar="DBNAME",
+    help="create database using the local server credentials",
 )
 group.add_argument(
-    "-k", "--heroku", action="store_true", help="create database on heroku cloud"
+    "-k",
+    "--heroku",
+    metavar="APPNAME",
+    help="create database using a heroku application",
 )
 
 
@@ -43,19 +53,24 @@ def populate_database(session, row_limit):
     with open(filename, "r", encoding="utf-8") as file:
         lines = file.readlines()
 
+    # Create a progress bar.
+    lim = len(lines) if row_limit is None else row_limit
+    row_count, prev_row_count, player_row_count = 0, 0, 0
+    bar = Bar(
+        message="Populating database ...",
+        check_tty=False,
+        suffix="%(percent)d%%",
+        max=lim,
+    )
+
     # Parse the dataset and populate the database.
     for line in lines:
-        player_rows = session.query(Player).count()
-        match_rows = session.query(Match).count()
-        if row_limit is not None and player_rows + match_rows > row_limit:
-            break
-
-        datematch = re.match(DATE_REGEX, line)
+        datematch = re.match(r"^(\d\d/\d\d/\d\d)$", line)
         if datematch:
             date = datetime.strptime(datematch.group(), "%d/%m/%y")
             date = date.replace(tzinfo=timezone.utc)
 
-        gamematch = re.match(GAME_REGEX, line)
+        gamematch = re.match(r"^(\S+) (\d+) (\d+) (\S+)$", line)
         if gamematch:
             playerA = gamematch.group(1)
             scoreA = int(gamematch.group(2))
@@ -76,49 +91,62 @@ def populate_database(session, row_limit):
                 session.add(match)
                 session.commit()
 
+                prev_row_count = row_count
+                player_row_count = max(playerA.id, playerB.id, player_row_count)
+                row_count = match.id + player_row_count
+
+                if row_limit is not None and row_count - prev_row_count > 0:
+                    bar.next(row_count - prev_row_count)
+                    if row_count >= row_limit:
+                        break
+
             except AssertionError:
                 pass
+
+        if row_limit is None:
+            bar.next()
+
+    bar.finish()
 
 
 def start():
     # Parse the command line arguments.
     args = parser.parse_args()
-    if args.local:
-        # Get the local database access credentials via the private config.
-        SQL_URL = "postgresql://{}:{}@localhost/hikuwr_db".format(
-            LOCAL_SQL_USERNAME, LOCAL_SQL_PASSWORD
-        )
-        row_limit = None
-    elif args.heroku:
+
+    if args.heroku is not None:
         # Get the Heroku database access credentials via the CLI.
-        SQL_URL = (
-            subprocess.check_output(
-                "heroku config:get DATABASE_URL -a hiku-worldranking", shell=True
-            )
+        cmd = "heroku config:get DATABASE_URL -a " + args.heroku
+        url = (
+            subprocess.check_output(cmd, shell=True)
             .decode("utf-8")
             .strip()
             .replace("postgres", "postgresql")
         )
-        row_limit = HEROKU_ROW_LIMIT
-    else:
-        parser.print_help()
-        return
+        row_limit = 9990  # 10 rows margin against 10000 limit
 
-    # Create a clean PostgreSQL database and connect.
-    dbengine = create_engine(SQL_URL)
-    if not database_exists(dbengine.url):
-        create_database(dbengine.url)
     else:
-        Base.metadata.drop_all(dbengine)
+        # Get the local database access credentials via the private config.
+        sql = "postgresql://{username}:{password}@{hostname}/{database}"
+        url = sql.format(
+            username=LOCAL_SQL_USERNAME,
+            password=LOCAL_SQL_PASSWORD,
+            hostname=LOCAL_SQL_HOSTNAME,
+            database=args.local,
+        )
+        row_limit = None
 
-    Base.metadata.create_all(dbengine)
-    connection = dbengine.connect()
-    session = Session(bind=connection)
+        if not database_exists(url):
+            create_database(url)
 
     # Populate the database.
+    engine = create_engine(url)
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
+    connection = engine.connect()
+    session = Session(bind=connection)
     populate_database(session, row_limit)
 
     # Close the database connection.
     session.close()
     connection.close()
-    dbengine.dispose()
+    engine.dispose()
