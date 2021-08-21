@@ -16,17 +16,9 @@
 import re
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Unicode,
-)
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Unicode
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.sql import func
 
@@ -54,9 +46,13 @@ class Player(Base):
 
     @hybrid_property
     def matches(self):
-        return list(
-            filter(lambda match: match.active, self.matches_asA + self.matches_asB)
-        )
+        return [match for match in self.matches_asA + self.matches_asB if match.active]
+
+    @hybrid_method
+    def rating(self, asof_date):
+        ratings = sorted(self.ratings, key=lambda r: r.asof_date, reverse=True)
+        ratings = [rating for rating in ratings if rating.asof_date <= asof_date]
+        return ratings[0] if ratings else None
 
     def __repr__(self):
         return (
@@ -76,7 +72,7 @@ class Match(Base):
     scoreB = Column(Integer, nullable=False)
     handshakeA = Column(Boolean, server_default="false", nullable=False)
     handshakeB = Column(Boolean, server_default="false", nullable=False)
-    created = Column(DateTime, server_default=func.now(), nullable=False)
+    created = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     active = Column(Boolean, server_default="true", nullable=False)
 
     playerA = relationship("Player", foreign_keys=playerA_id, backref="matches_asA")
@@ -109,7 +105,9 @@ class Match(Base):
     def __repr__(self):
         return (
             "<Match(id={match.id}, "
-            "playerA={match.playerA.name}:{match.scoreA}, "
-            "playerB={match.playerB.name}:{match.scoreB}, "
-            "created={match.created}".format(match=self)
+            "playerA.name={match.playerA.name}, "
+            "scoreA={match.scoreA}, "
+            "playerB.name={match.playerB.name}, "
+            "scoreB={match.scoreB}, "
+            "created={match.created})>".format(match=self)
         )
