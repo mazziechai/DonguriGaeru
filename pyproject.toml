@@ -8,7 +8,7 @@ license = "AGPL-3.0-or-later"
 [tool.poetry.dependencies]
 python = "^3.9"
 "discord.py" = "^1.7.3"
-SQLAlchemy = "^1.4.22"
+SQLAlchemy = "1.4.22"
 Flask = "^2.0.1"
 SQLAlchemy-Utils = "^0.37.8"
 psycopg2 = "^2.9.1"
@@ -20,6 +20,8 @@ black = "^21.7b0"
 flake9 = "^3.8.3"
 pytest = "^6.2.4"
 progress = "^1.6"
+networkx = "^2.6.2"
+python-louvain = "^0.15"
 
 [tool.poetry.scripts]
 hikuwr = "studies.hikuwr.hikuwr:start"
