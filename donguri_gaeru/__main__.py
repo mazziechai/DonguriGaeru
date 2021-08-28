@@ -1,53 +1,52 @@
-# Copyright (C) 2021 mazziechai
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import asyncio
-import re
-from pathlib import Path
+import logging
+from logging.handlers import RotatingFileHandler
 
 import discord
-from config import config
-from core import database, utils
-from discord.ext import commands
-from logger import logger
+from bot import DonguriGaeruBot
 
-bot = commands.Bot(
-    command_prefix=",",
-    activity=discord.Activity(type=discord.ActivityType.listening, name=";help"),
+from config import LOG_LEVEL, PREFIX, TOKEN
+
+# Setting up logging
+logging.getLogger("discord").setLevel(logging.INFO)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(LOG_LEVEL)
+
+file_handler = RotatingFileHandler(
+    filename="bot.log",
+    encoding="utf-8",
+    mode="w",
+    maxBytes=32 * 1024 * 1024,
+    backupCount=5,
+)
+datefmt = "%Y-%m-%d %H:%M:%S"
+fmt = logging.Formatter(
+    "[{asctime}] [{levelname}] {name}: {message}", datefmt, style="{"
 )
 
-utils.bot = bot
+file_handler.setFormatter(fmt)
 
-# Loading every cog in the cogs folder
-file_directory = Path(__file__).parent.resolve()
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(fmt)
 
-for cog in (file_directory / "cogs").resolve().glob(r"**/*"):
-    relative_path = re.sub(r"(.+)(dongurigaeru.)", "", str(cog))
-    bot.load_extension(re.sub(r"[\\\/]", ".", relative_path).replace(".py", ""))
+root_logger.addHandler(file_handler)
+root_logger.addHandler(stream_handler)
 
+# Starting the bot now
+prefix = PREFIX
 
-# Setting our events
-@bot.event
-async def on_ready():
-    logger.info(f"Logged in as {bot.user.name}#{bot.user.discriminator}!")
-    asyncio.create_task(database.backup())
+log = logging.getLogger("donguri_gaeru")
 
+bot = DonguriGaeruBot(
+    command_prefix=prefix,
+    activity=discord.Activity(
+        type=discord.ActivityType.listening, name=f"{prefix}help"
+    ),
+)
 
-@bot.event
-async def on_command_error(ctx, error):
-    pass  # stops command not found errors, handle errors in cogs instead
+log.info("Logging in...")
 
+if not TOKEN:
+    raise Exception("A token was not specified in the config!")
 
-bot.run(config["discord"]["token"], bot=True, reconnect=True)
+bot.run(TOKEN, bot=True, reconnect=True)
