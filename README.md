@@ -10,14 +10,15 @@ poetry install
 poetry run pre-commit install
 ```
 
-Executing the software requires a private configuration file, `config.py`. Below is a template to be placed at the top level of the repository. Fill it in with the appropriate information for your execution environment.
+Executing the software requires a private configuration file, `config.py`. Provided in this repository is `example_config.py`, which contains everything you need to get started. Fill it in with the appropriate information for your execution environment (remember to set the Discord bot token).
 
-```python
-# LOCAL_SQL provides private access credentials to a PostgreSQL server.
-LOCAL_SQL_USERNAME = "postgres"
-LOCAL_SQL_PASSWORD = "password"
-LOCAL_SQL_HOSTNAME = "localhost"
+Finally, you can start the Discord bot.
+
 ```
+poetry run python donguri_gaeru
+```
+
+---
 
 PostgreSQL is used as the underlying database. Download it [here](https://www.postgresql.org/download/).
 
