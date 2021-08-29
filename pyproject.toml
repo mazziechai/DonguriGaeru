@@ -6,7 +6,7 @@ authors = ["amosborne (terramyst)", "mazziechai (ferret)"]
 license = "AGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "3.9"
 "discord.py" = "^1.7.3"
 SQLAlchemy = "1.4.22"
 Flask = "^2.0.1"
@@ -22,6 +22,8 @@ pytest = "^6.2.4"
 progress = "^1.6"
 networkx = "^2.6.2"
 python-louvain = "^0.15"
+matplotlib = "^3.4.3"
+scipy = "^1.7.1"
 
 [tool.poetry.scripts]
 hikuwr = "studies.hikuwr.hikuwr:start"
