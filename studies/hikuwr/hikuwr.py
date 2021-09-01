@@ -86,14 +86,16 @@ def graph2database(dbname, session, graph):
             player = Player(name=name, created=created)
             session.add(player)
             session.commit()
+
         return player.id
 
     # Loop through each match and populate the database.
     bar = Bar(dbname, check_tty=False, suffix="%(percent)d%%")
-    for match in bar.iter(graph.edges.data()):
+    matches_bydate = sorted(graph.edges.data(), key=lambda match: match[2]["created"])
+    for match in bar.iter(matches_bydate):
         with suppress(AssertionError):
-            idA = player(name := match[0], graph.nodes[name]["created"])
-            idB = player(name := match[1], graph.nodes[name]["created"])
+            idA = player(match[0], match[2]["created"])
+            idB = player(match[1], match[2]["created"])
             session.add(Match(playerA_id=idA, playerB_id=idB, **match[2]))
             session.commit()
 

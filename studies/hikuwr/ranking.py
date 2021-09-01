@@ -1,10 +1,11 @@
 import os
 import re
+from datetime import datetime, timedelta, timezone
 
 from matplotlib import pyplot as plt
 from scipy.stats.stats import pearsonr
 
-from donguri_gaeru.rating import Rating, db2rating
+from donguri_gaeru.rating import HikuRating, db2rating
 
 
 def load_rankings(filename):
@@ -19,7 +20,7 @@ def load_rankings(filename):
     ranking = dict()
     for line in lines:
         if match := re.match(pattern, line):
-            ranking[match.group(1)] = Rating(
+            ranking[match.group(1)] = HikuRating(
                 min=float(match.group(2)),
                 med=float(match.group(3)),
                 max=float(match.group(4)),
@@ -45,14 +46,19 @@ def compare_rankings(ax, truth, actual):
 
 RANKING_FEB_2020 = load_rankings("ranking_feb_2020.txt")
 
+rating_period = timedelta(weeks=2)
+start_date = datetime(2019, 12, 1, tzinfo=timezone.utc)
+end_date = datetime(2020, 2, 1, tzinfo=timezone.utc)
+
 # Compare the ranking algorithm to hikuwr and save plot to file.
-dbnames = ["hikuwr_puyolobbyA", "hikuwr_puyolobbyB"]
-fig, axes = plt.subplots(nrows=1, ncols=len(dbnames), figsize=(12, 8))
+dbnames = ["hikuwr", "hikuwr_puyolobbyA", "hikuwr_puyolobbyB"]
+fig, axes = plt.subplots(nrows=1, ncols=len(dbnames), figsize=(16, 9))
 for dbname, ax in zip(dbnames, axes):
-    corr = compare_rankings(ax, RANKING_FEB_2020, db2rating(dbname))
+    ranking = db2rating(dbname, start_date, end_date, rating_period)
+    corr = compare_rankings(ax, truth=RANKING_FEB_2020, actual=ranking)
     ax.title.set_text(dbname + " (Pearson: {:0.2f})".format(corr))
     ax.set_xlabel("Hiku World Ranking (Feb 2020)")
-    ax.set_ylabel("Donguri Gaeru")
+    ax.set_ylabel("Donguri Gaeru Ranking")
     ax.set(adjustable="box", aspect="equal")
     ax.grid()
 
