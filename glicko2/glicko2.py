@@ -18,6 +18,17 @@ def rate(
     player: Rating,
     results: dict[Rating, list[float]],
 ):
+    """
+    Calculate a new rating for a player from a dictionary of opponents and the scores.
+
+    Args:
+        player (Rating): The player's rating.
+        results (dict[Rating, list[float]]): The player's opponents and a list
+        of the scores they got.
+
+    Returns:
+       Rating: The new rating.
+    """
     μ: float = (player.rating - 1500) / 173.7178
     φ: float = player.rd / 173.7178
     σ: float = player.volatility
