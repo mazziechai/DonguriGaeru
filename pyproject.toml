@@ -2,7 +2,7 @@
 name = "donguri-gaeru"
 version = "0.1.0"
 description = "A web-based Puyo Puyo ranking system with Discord integration."
-authors = ["amosborne (terramyst)", "mazziechai (ferret)"]
+authors = ["amosborne (terramyst)", "mazziechai"]
 license = "AGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
@@ -20,6 +20,7 @@ isort = "^5.9.3"
 black = "^21.7b0"
 flake9 = "^3.8.3"
 pytest = "^6.2.4"
+pytest-asyncio = "^0.15.1"
 progress = "^1.6"
 
 [tool.poetry.scripts]
