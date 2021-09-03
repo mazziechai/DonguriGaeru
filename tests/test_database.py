@@ -46,10 +46,6 @@ def test_player(dbsession):
     with pytest.raises(AssertionError):
         dbsession.add(Player(name="12345"))
 
-    # If a discord name is specified, it must match the pattern.
-    with pytest.raises(AssertionError):
-        dbsession.add(Player(name="test_player", discord=""))
-
     # If a created date is specified, it must be in the past.
     with pytest.raises(AssertionError):
         future = datetime.now(timezone.utc) + timedelta(days=1)
@@ -57,7 +53,7 @@ def test_player(dbsession):
 
     # Add players to the database and verify correctness.
     test_playerA = {"name": "test_playerA", "created": datetime.now(timezone.utc)}
-    test_playerB = {"name": "test_playerB", "discord": "discordname#0123"}
+    test_playerB = {"name": "test_playerB", "discord": 1234567890}
     test_players = [test_playerA, test_playerB]
     dbsession.add_all([Player(**test_player) for test_player in test_players])
 
@@ -102,16 +98,13 @@ def test_match(dbsession):
     dbsession.commit()
 
     assert test_match.games == 10
-    assert test_match.active
     assert not test_match.handshake
     assert test_playerA.matches[0] == test_match
     assert test_playerB.matches[0] == test_match
 
     # Demonstrate active and handshake status changing.
-    test_match.active = False
     test_match.handshakeA = True
     dbsession.commit()
-    assert not dbsession.query(Match).first().active
     assert not dbsession.query(Match).first().handshake
 
     test_match.handshakeB = True

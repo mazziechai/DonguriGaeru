@@ -29,7 +29,7 @@ class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
-    discord = Column(String, default=None, unique=True, nullable=True)
+    discord = Column(Integer, default=None, unique=True, nullable=True)
     created = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     # TODO: Add username/password when creating Flask application.
 
@@ -39,13 +39,6 @@ class Player(Base):
         assert name and not re.match(r"^\d+$", name)
         return name
 
-    @validates("discord")
-    def validate_discord(self, key, discord):
-        if discord is not None:
-            discord = discord.strip()
-            assert re.match(r"^.+#\d\d\d\d$", discord)
-        return discord
-
     @validates("created")
     def validate_created(self, key, created):
         assert created <= datetime.now(timezone.utc)
@@ -53,9 +46,7 @@ class Player(Base):
 
     @hybrid_property
     def matches(self):
-        return list(
-            filter(lambda match: match.active, self.matches_asA + self.matches_asB)
-        )
+        return self.matches_asA + self.matches_asB
 
     def __repr__(self):
         return (
@@ -76,7 +67,6 @@ class Match(Base):
     handshakeA = Column(Boolean, server_default="false", nullable=False)
     handshakeB = Column(Boolean, server_default="false", nullable=False)
     created = Column(DateTime, server_default=func.now(), nullable=False)
-    active = Column(Boolean, server_default="true", nullable=False)
 
     playerA = relationship("Player", foreign_keys=playerA_id, backref="matches_asA")
     playerB = relationship("Player", foreign_keys=playerB_id, backref="matches_asB")
