@@ -4,12 +4,15 @@ LOG_LEVEL = logging.DEBUG
 
 # Database
 
-LOCAL_SQL_USERNAME = "postgres"
-LOCAL_SQL_PASSWORD = None
-LOCAL_SQL_HOSTNAME = "localhost"
-LOCAL_SQL_DATABASE = "puyodb"
+DB_USERNAME = "postgres"
+DB_PASSWORD = None
+DB_HOSTNAME = "localhost"
+DB_NAME = "puyodb"
 
 # Discord
 
-TOKEN = None  # !!Set me!!
-PREFIX = ";"
+DEBUG = False
+TOKEN = None  # Set this
+TEST_GUILDS = (
+    None  # Set this to a list of guild IDs for testing the bot's slash commands
+)

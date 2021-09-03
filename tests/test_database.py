@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, drop_database
 
-from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
+from config import DB_HOSTNAME, DB_PASSWORD, DB_USERNAME
 from donguri_gaeru.database import Base, Match, Player
 
 
@@ -13,9 +13,9 @@ from donguri_gaeru.database import Base, Match, Player
 def dbengine():
     sql = "postgresql://{username}:{password}@{hostname}/{database}"
     url = sql.format(
-        username=LOCAL_SQL_USERNAME,
-        password=LOCAL_SQL_PASSWORD,
-        hostname=LOCAL_SQL_HOSTNAME,
+        username=DB_USERNAME,
+        password=DB_PASSWORD,
+        hostname=DB_HOSTNAME,
         database="test_database",
     )
     create_database(url)

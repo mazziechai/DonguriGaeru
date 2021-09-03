@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, database_exists
 
-from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
+from config import DB_HOSTNAME, DB_PASSWORD, DB_USERNAME
 from donguri_gaeru.database import Base, Match, Player
 
 parser = argparse.ArgumentParser(
@@ -128,9 +128,9 @@ def start():
         # Get the local database access credentials via the private config.
         sql = "postgresql://{username}:{password}@{hostname}/{database}"
         url = sql.format(
-            username=LOCAL_SQL_USERNAME,
-            password=LOCAL_SQL_PASSWORD,
-            hostname=LOCAL_SQL_HOSTNAME,
+            username=DB_USERNAME,
+            password=DB_PASSWORD,
+            hostname=DB_HOSTNAME,
             database=args.local,
         )
         row_limit = None
