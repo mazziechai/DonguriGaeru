@@ -5,7 +5,7 @@ import subprocess
 from datetime import datetime, timezone
 
 from progress.bar import Bar
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, database_exists
 
@@ -39,7 +39,9 @@ group.add_argument(
 
 def create_new_player(session, name, date):
     # If the player isn't already in the database, add them.
-    player = session.query(Player).filter_by(name=name).first()
+    player = (
+        session.execute(select(Player).where(Player.name == name)).scalars().first()
+    )
     if player is None:
         player = Player(name=name, created=date)
         session.add(player)
@@ -55,7 +57,7 @@ def populate_database(session, row_limit):
 
     # Create a progress bar.
     lim = len(lines) if row_limit is None else row_limit
-    row_count, prev_row_count, player_row_count = 0, 0, 0
+    row_count, prev_row_count, player_row_count, match_row_count = 0, 0, 0, 0
     bar = Bar(
         message="Populating database ...",
         check_tty=False,
@@ -89,11 +91,11 @@ def populate_database(session, row_limit):
                     created=date,
                 )
                 session.add(match)
-                session.commit()
 
                 prev_row_count = row_count
                 player_row_count = max(playerA.id, playerB.id, player_row_count)
-                row_count = match.id + player_row_count
+                match_row_count += 1
+                row_count = match_row_count + player_row_count
 
                 if row_limit is not None and row_count - prev_row_count > 0:
                     bar.next(row_count - prev_row_count)
@@ -106,6 +108,7 @@ def populate_database(session, row_limit):
         if row_limit is None:
             bar.next()
 
+    session.commit()
     bar.finish()
 
 
@@ -139,11 +142,11 @@ def start():
             create_database(url)
 
     # Populate the database.
-    engine = create_engine(url)
+    engine = create_engine(url, future=True)
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     connection = engine.connect()
-    session = Session(bind=connection)
+    session = Session(bind=connection, future=True)
     populate_database(session, row_limit)
 
     # Close the database connection.
