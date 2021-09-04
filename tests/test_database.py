@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy_utils import create_database, drop_database
 
@@ -19,7 +19,7 @@ def dbengine():
         database="test_database",
     )
     create_database(url)
-    engine = create_engine(url)
+    engine = create_engine(url, future=True)
 
     yield engine
 
@@ -31,7 +31,7 @@ def dbengine():
 def dbsession(dbengine):
     Base.metadata.create_all(dbengine)
     with dbengine.connect() as connection:
-        with Session(bind=connection) as session:
+        with Session(bind=connection, future=True) as session:
             yield session
 
         Base.metadata.drop_all(dbengine)
@@ -57,12 +57,14 @@ def test_player(dbsession):
     test_players = [test_playerA, test_playerB]
     dbsession.add_all([Player(**test_player) for test_player in test_players])
 
-    assert dbsession.query(Player).count() == len(test_players)
+    result = dbsession.execute(select(Player)).scalars().all()
 
-    for result, expect in zip(dbsession.query(Player), test_players):
-        assert result.name == expect["name"]
-        assert result.discord == expect.get("discord", None)
-        assert result.created < datetime.now(timezone.utc)
+    assert len(result) == len(test_players)
+
+    for player, expect in zip(result, test_players):
+        assert player.name == expect["name"]
+        assert player.discord == expect.get("discord", None)
+        assert player.created < datetime.now(timezone.utc)
 
 
 def test_match(dbsession):
@@ -105,8 +107,8 @@ def test_match(dbsession):
     # Demonstrate active and handshake status changing.
     test_match.handshakeA = True
     dbsession.commit()
-    assert not dbsession.query(Match).first().handshake
+    assert not dbsession.execute(select(Match)).scalars().first().handshake
 
     test_match.handshakeB = True
     dbsession.commit()
-    assert dbsession.query(Match).first().handshake
+    assert dbsession.execute(select(Match)).scalars().first().handshake
