@@ -12,7 +12,6 @@ SQLAlchemy = "1.4.22"
 Flask = "^2.0.1"
 SQLAlchemy-Utils = "^0.37.8"
 psycopg2 = "^2.9.1"
-discord-py-interactions = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.14.0"
