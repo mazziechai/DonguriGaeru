@@ -12,7 +12,6 @@ DB_NAME = "puyodb"
 # Discord
 
 DEBUG = False
+PREFIX = "."
 TOKEN = None  # Set this
-TEST_GUILDS = (
-    None  # Set this to a list of guild IDs for testing the bot's slash commands
-)
+ADMINISTRATORS = []

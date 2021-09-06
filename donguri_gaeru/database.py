@@ -100,6 +100,5 @@ class Match(Base):
             "<Match(id={match.id}, "
             "playerA={match.playerA.name}:{match.scoreA}, "
             "playerB={match.playerB.name}:{match.scoreB}, "
-            "created={match.created}, "
-            "active={match.active})>".format(match=self)
+            "created={match.created}".format(match=self)
         )
