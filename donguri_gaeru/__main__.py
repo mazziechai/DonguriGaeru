@@ -18,8 +18,19 @@ from logging.handlers import RotatingFileHandler
 
 import discord
 from bot import DonguriGaeruBot
+from database import Base
+from sqlalchemy.engine import create_engine
 
-from config import LOG_LEVEL, PREFIX, TOKEN
+from config import (
+    DB_HOSTNAME,
+    DB_NAME,
+    DB_PASSWORD,
+    DB_USERNAME,
+    LOG_LEVEL,
+    PREFIX,
+    TOKEN,
+)
+from donguri_gaeru import Session
 
 # Setting up logging
 logging.getLogger("discord").setLevel(logging.INFO)
@@ -47,16 +58,33 @@ stream_handler.setFormatter(fmt)
 root_logger.addHandler(file_handler)
 root_logger.addHandler(stream_handler)
 
-# Starting the bot now
-prefix = PREFIX
-
+# Setting up the database
 log = logging.getLogger("donguri_gaeru")
 
+username = DB_USERNAME
+password = DB_PASSWORD
+hostname = DB_HOSTNAME
+db_name = DB_NAME
+
+if password:
+    sql = "postgresql://{username}:{password}@{hostname}/{db_name}"
+else:
+    sql = "postgresql://{username}@{hostname}/{db_name}"
+url = sql.format(
+    username=DB_USERNAME, password=DB_PASSWORD, hostname=DB_HOSTNAME, db_name=DB_NAME
+)
+
+engine = create_engine(url, future=True)
+Base.metadata.create_all(engine)
+
+Session.configure(bind=engine)
+
+log.info("Loaded database.")
+
+# Starting the bot now
 bot = DonguriGaeruBot(
-    command_prefix=prefix,
-    activity=discord.Activity(
-        type=discord.ActivityType.listening, name=f"{prefix}help"
-    ),
+    command_prefix=PREFIX,
+    activity=discord.Activity(type=discord.ActivityType.listening, name="/help"),
 )
 
 log.info("Logging in...")
