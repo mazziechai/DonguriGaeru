@@ -23,6 +23,8 @@ PostgreSQL is used as the underlying database. Download it [here](https://www.po
 
 [Hiku's World Ranking](https://www.bayoen.fr/wiki/World_Ranking) can be instantiated as a test database with the command line script `poetry run hikuwr` (use the `--help` option for more detail). The database can be created either at the server specified in the private configuration file or on the cloud via a free-tier [Heroku](www.heroku.com) account and the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli).
 
+Running Hiku's original Java code requires compilation: `javac -encoding utf8 WorldRanking.java` using Java Runtime 52.0 (i.e. Java SE Development Kit 8u301, a.k.a. JDK 8).
+
 ## Specifications and plans
 
 ### General stuff
