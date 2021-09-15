@@ -46,7 +46,7 @@ def db2ratings(dbname, asof_date, times):
                 )
             WorldRanking.pythonExecuteAlgorithm(times)
             truth_ratings = {
-                name: rating
+                str(name): float(rating)
                 for name, rating in zip(
                     WorldRanking.playerNames, WorldRanking.playerRatings
                 )
@@ -81,8 +81,18 @@ def file2ratings(filename):
     return ratings
 
 
+def ratings2file(dbname, times, truth, actual):
+    filename = os.path.join(os.path.dirname(__file__), "results", dbname + ".txt")
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write("Iterations: {:d} times\n".format(times))
+        file.write("Median ratings: ( name, java (truth), python (actual) ):\n")
+        ranking = sorted(truth, key=lambda name: truth[name], reverse=True)
+        for name in ranking:
+            file.write("{}, {:0.2f}, {:0.2f}\n".format(name, truth[name], actual[name]))
+
+
 def compare_algorithms(ax, truth, actual):
-    ratings = [(truth[p], truth[p] - actual[p]) for p in truth]
+    ratings = [(truth[p], actual[p] - truth[p]) for p in truth]
     ax.scatter(*zip(*ratings), s=5)
 
 
@@ -93,15 +103,18 @@ asof_date = datetime(2020, 2, 1, tzinfo=timezone.utc)
 
 # Compare the rating algorithm to hikuwr and save plot to file.
 dbnames = ["hikuwr", "hikuwr_puyolobbyA", "hikuwr_puyolobbyB"]
+times = 300
 
 fig, axes = plt.subplots(nrows=1, ncols=len(dbnames), figsize=(16, 9))
 for dbname, ax in zip(dbnames, axes):
-    truth_ratings, actual_ratings = db2ratings(dbname, asof_date, times=300)
+    truth_ratings, actual_ratings = db2ratings(dbname, asof_date, times)
     compare_algorithms(ax, truth=truth_ratings, actual=actual_ratings)
+
+    ratings2file(dbname, times, truth_ratings, actual_ratings)
 
     ax.title.set_text(dbname)
     ax.set_xlabel("Original Java Implementation (Rating)")
-    ax.set_ylabel("Reimplemented in Python, (Rating Error)")
+    ax.set_ylabel("Reimplemented in Python (Rating Error)")
     ax.set(adjustable="box", aspect="equal")
     ax.grid()
 

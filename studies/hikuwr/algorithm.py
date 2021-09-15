@@ -6,7 +6,7 @@ from progress.spinner import PixelSpinner
 
 # Parameters and magic numbers (see implementation for magic functions).
 DEFAULT_RATING = 1
-TIME_DECAY_SCALAR = 365
+TIME_DECAY_SCALAR = 365 / 1.5
 COEFFICIENT_SCALAR = 1000
 
 Rating = namedtuple("Rating", "min med max")
