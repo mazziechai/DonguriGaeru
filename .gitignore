@@ -2,3 +2,4 @@ poetry.lock
 .python-version
 __pycache__/
 config.py
+*.class
