@@ -33,6 +33,8 @@ def db2ratings(dbname, asof_date, times):
                 .order_by(asc(Match.created))
                 .all()
             )
+            asof_date = datetime.now(tz=timezone.utc)
+            # matches = matches[0:2]
 
             # Using Hiku's original Java implementation.
             WorldRanking = jpype.JClass("fr/hiku/WorldRanking")()
@@ -115,7 +117,6 @@ for dbname, ax in zip(dbnames, axes):
     ax.title.set_text(dbname)
     ax.set_xlabel("Original Java Implementation (Rating)")
     ax.set_ylabel("Reimplemented in Python (Rating Error)")
-    ax.set(adjustable="box", aspect="equal")
     ax.grid()
 
 fig.suptitle("Comparing Java and Python Hiku WorldRanking Algorithm Implementations")

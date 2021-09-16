@@ -4,11 +4,6 @@ from collections import namedtuple
 
 from progress.spinner import PixelSpinner
 
-# Parameters and magic numbers (see implementation for magic functions).
-DEFAULT_RATING = 1
-TIME_DECAY_SCALAR = 365 / 1.5
-COEFFICIENT_SCALAR = 1000
-
 Rating = namedtuple("Rating", "min med max")
 
 
@@ -35,8 +30,8 @@ def hikuwr_med_rating(matches, asof_date, ratings):
     # Loop through matches applying the Hiku World Ranking Algorithm.
     for match in matches:
         # Compute the match time coefficent.
-        time_coefficient = (asof_date - match.created).days / TIME_DECAY_SCALAR
-        time_coefficient = 1 / (time_coefficient ** 2 + 1)  # magic function
+        time_coefficient = (asof_date - match.created).days / 365.25
+        time_coefficient = 1 / (1.5 * (time_coefficient ** 2) + 1)  # magic function
 
         # Compute the match level coefficient.
         level_coefficientA = ratings[match.playerA] / ratings[match.playerB]
@@ -44,7 +39,7 @@ def hikuwr_med_rating(matches, asof_date, ratings):
         level_coefficient = min(level_coefficientA, level_coefficientB)
 
         # Compute the overall match coefficient.
-        coefficient = time_coefficient * level_coefficient / COEFFICIENT_SCALAR
+        coefficient = time_coefficient * level_coefficient / 1000  # magic function
 
         # Compute the match delta score.
         deltaA = math.sqrt(ratings[match.playerB] / ratings[match.playerA])
