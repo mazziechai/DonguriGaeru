@@ -100,13 +100,16 @@ def test_match(dbsession):
     dbsession.commit()
 
     assert test_match.games == 10
+    assert test_match.active
     assert not test_match.handshake
     assert test_playerA.matches[0] == test_match
     assert test_playerB.matches[0] == test_match
 
     # Demonstrate active and handshake status changing.
+    test_match.active = False
     test_match.handshakeA = True
     dbsession.commit()
+    assert not dbsession.execute(select(Match)).scalars().first().active
     assert not dbsession.execute(select(Match)).scalars().first().handshake
 
     test_match.handshakeB = True

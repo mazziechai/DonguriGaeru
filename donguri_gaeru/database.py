@@ -46,7 +46,9 @@ class Player(Base):
 
     @hybrid_property
     def matches(self):
-        return self.matches_asA + self.matches_asB
+        return list(
+            filter(lambda match: match.active, self.matches_asA + self.matches_asB)
+        )
 
     def __repr__(self):
         return (
@@ -67,6 +69,7 @@ class Match(Base):
     handshakeA = Column(Boolean, server_default="false", nullable=False)
     handshakeB = Column(Boolean, server_default="false", nullable=False)
     created = Column(DateTime, server_default=func.now(), nullable=False)
+    active = Column(Boolean, server_default="true", nullable=False)
 
     playerA = relationship("Player", foreign_keys=playerA_id, backref="matches_asA")
     playerB = relationship("Player", foreign_keys=playerB_id, backref="matches_asB")
