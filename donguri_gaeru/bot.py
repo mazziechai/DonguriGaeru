@@ -49,14 +49,14 @@ class DonguriGaeruBot(commands.Bot):
             original = error.original
 
             if not isinstance(original, discord.HTTPException):
-                self.log.error(
-                    f"""Exception from {ctx.command.qualified_name}:\n
-                        {traceback.format_exc()}\n
-                        {original.__class__.__name__}: {original}"""
+                self.log.exception(
+                    f"""Exception from {ctx.command.qualified_name}!\n
+                    {"".join(traceback.format_exception(
+                        None, error, error.__traceback__
+                    ))}"""
                 )
 
                 await ctx.send(
-                    f"""Exception from {ctx.command.qualified_name}:\n
-                        {traceback.format_exc()}\n
-                        {original.__class__.__name__}: {original}"""
+                    f"Some exception from {ctx.command.qualified_name}! "
+                    + "Please direct the developers to this error."
                 )
