@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 
 import discord
@@ -23,6 +22,7 @@ from discord.ext import commands
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from utils import checks
+from utils.command_utils import confirmation
 
 from donguri_gaeru import Session
 
@@ -38,7 +38,7 @@ class MatchCog(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx: commands.Context):
-        await ctx.reply("Pong!")
+        await ctx.send("Pong!")
 
     @commands.command()
     async def submit(
@@ -74,96 +74,94 @@ class MatchCog(commands.Cog):
             session.refresh(playerA)
             session.refresh(playerB)
 
-            match = Match(
-                playerA_id=playerA.id,
-                playerB_id=playerB.id,
-                scoreA=score1,
-                scoreB=score2,
+            msg: discord.Message = await ctx.send(
+                "Is this information correct?\n"
+                + f"({playerA.name}) {score1} - {score2} ({playerB.name})"
             )
-            session.add(match)
-            session.commit()
 
-            session.refresh(match)
-            await ctx.reply(
-                "Submitted match!\n"
-                + f"`{match.id}`\n"
-                + f"({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
-            )
+            if await confirmation(ctx, msg):
+                match = Match(
+                    playerA_id=playerA.id,
+                    playerB_id=playerB.id,
+                    scoreA=score1,
+                    scoreB=score2,
+                )
+                session.add(match)
+                session.commit()
+
+                session.refresh(match)
+                await ctx.send(
+                    "Submitted match!\n"
+                    + f"`{match.id}`\n"
+                    + f"({match.playerA.name}) {match.scoreA} - "
+                    f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+                )
 
     @commands.command()
+    @checks.is_administrator()
     async def delete(self, ctx: commands.Context, match_id: int):
         with Session() as session:
             stmt = select(Match).where(Match.id == match_id)
             try:
                 match: Match = session.execute(stmt).scalars().one()
             except NoResultFound:
-                await ctx.reply(f"Match {match_id} doesn't exist!")
+                await ctx.send(f"Match {match_id} doesn't exist!")
                 return
 
             if not match.active:
-                await ctx.reply("This match has already been deleted!")
+                await ctx.send("This match has already been deleted!")
                 return
 
-            msg: discord.Message = await ctx.reply(
+            msg: discord.Message = await ctx.send(
                 "Are you sure you want to delete this match?\n"
                 + f"`{match_id}`\n"
                 + f"({match.playerA.name}) {match.scoreA} - "
                 f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
             )
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
 
-            try:
-                event = await self.bot.wait_for(
-                    "reaction_add", check=checks.is_confirmation(ctx), timeout=30.0
-                )  # A tuple of a Reaction and a Member/User.
-            except asyncio.TimeoutError:
-                await ctx.reply("No response, cancelling!")
-                return
-
-            if str(event[0].emoji) == "✅":
+            if await confirmation(ctx, msg):
                 match.active = False
                 session.commit()
-                await ctx.reply("Match has been deleted!")
-            else:
-                await ctx.reply("Cancelling!")
+                await ctx.send("Match has been deleted!")
 
     @commands.command()
+    @checks.is_administrator()
     async def fix(self, ctx: commands.Context, match_id: int, score1: int, score2: int):
         with Session() as session:
             stmt = select(Match).where(Match.id == match_id)
             try:
                 match: Match = session.execute(stmt).scalars().one()
             except NoResultFound:
-                await ctx.reply(f"Match {match_id} doesn't exist!")
+                await ctx.send(f"Match {match_id} doesn't exist!")
                 return
 
-            msg: discord.Message = await ctx.reply(
+            if score1 == match.scoreA:
+                part1 = f"{score1}"
+            else:
+                part1 = f"~~{match.scoreA}~~ {score1}"
+
+            if score2 == match.scoreB:
+                part2 = f"{score2}"
+            else:
+                part2 = f"{score2} ~~{match.scoreB}~~"
+
+            if score1 == match.scoreA and score2 == match.scoreB:
+                await ctx.send("The new scores are the same as the old scores.")
+                return
+
+            msg: discord.Message = await ctx.send(
                 "Is this information correct?\n"
                 + f"`{match_id}`\n"
-                + f"({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+                + f"({match.playerA.name}) {part1} - "
+                + f"{part2} ({match.playerB.name})\n"
+                + f"at {match.created}"
             )
 
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-
-            try:
-                event = await self.bot.wait_for(
-                    "reaction_add", check=checks.is_confirmation(ctx), timeout=30.0
-                )  # A tuple of a Reaction and a Member/User.
-            except asyncio.TimeoutError:
-                await ctx.reply("No response, cancelling!")
-                return
-
-            if str(event[0].emoji) == "✅":
+            if await confirmation(ctx, msg):
                 match.scoreA = score1
                 match.scoreB = score2
                 session.commit()
-                await ctx.reply("Match has been fixed!")
-            else:
-                await ctx.reply("Cancelling!")
+                await ctx.send("Match has been fixed!")
 
 
 def setup(bot):

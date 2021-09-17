@@ -13,28 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+
 import discord
 from discord.ext import commands
-
-from config import ADMINISTRATORS
-
-
-def is_administrator():
-    """
-    Returns true if the author is in the ADMINISTRATORS list in the config.
-    """
-
-    def predicate(ctx: commands.Context):
-        return ctx.author.id in ADMINISTRATORS
-
-    return commands.check(predicate)
+from utils import checks
 
 
-def is_confirmation(ctx: commands.Context):
-    def check(reaction: discord.Reaction, user: discord.User):
-        if ctx.author == user:
-            return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
+async def confirmation(ctx: commands.Context, msg: discord.Message):
+    await msg.add_reaction("✅")
+    await msg.add_reaction("❌")
 
-        return False
+    try:
+        event = await ctx.bot.wait_for(
+            "reaction_add", check=checks.is_confirmation(ctx), timeout=30.0
+        )  # A tuple of a Reaction and a Member/User.
+        if str(event[0].emoji) == "✅":
+            return True
+    except asyncio.TimeoutError:
+        await ctx.send("There was no response.")
 
-    return check
+    await ctx.send("Cancelling!")
+    return False
