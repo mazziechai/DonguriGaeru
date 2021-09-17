@@ -20,6 +20,7 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from discord.utils import escape_markdown
 
 
 class DonguriGaeruBot(commands.Bot):
@@ -57,6 +58,9 @@ class DonguriGaeruBot(commands.Bot):
                 )
 
                 await ctx.send(
-                    f"Some exception from {ctx.command.qualified_name}! "
-                    + "Please direct the developers to this error."
+                    f"""Exception from {ctx.command.qualified_name}!\n
+                    ```{escape_markdown("".join(
+                        traceback.format_exception(None, error, error.__traceback__)
+                        )
+                    )}```"""
                 )
