@@ -23,7 +23,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
-    String,
+    Unicode,
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,7 +36,7 @@ Base = declarative_base()
 class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
+    name = Column(Unicode(length=32), unique=True, nullable=False)
     discord = Column(BigInteger, default=None, unique=True, nullable=True)
     created = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     # TODO: Add username/password when creating Flask application.
