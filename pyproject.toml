@@ -7,7 +7,7 @@ license = "AGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-py-cord = "^1.7.3"
+py-cord = { git = "https://github.com/Pycord-Development/pycord.git", branch = "master" }
 SQLAlchemy = "1.4.22"
 Flask = "^2.0.1"
 SQLAlchemy-Utils = "^0.37.8"
