@@ -14,11 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
+
 from bot import DonguriGaeruBot
 from database import Player
 from discord.ext import commands
-from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from utils import helpers
 
 from donguri_gaeru import Session
@@ -27,8 +29,9 @@ from donguri_gaeru import Session
 class RegistrationCog(commands.Cog):
     """Commands for linking a Discord account to a Player."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: DonguriGaeruBot):
         self.bot = bot
+        self.log = logging.getLogger("donguri_gaeru")
 
     @commands.command()
     async def register(self, ctx: commands.Context, name: str):
@@ -59,5 +62,44 @@ class RegistrationCog(commands.Cog):
                 await ctx.send(f"Successfully registered as `{name}`!")
 
 
+class PlayerSettingsCog(commands.Cog):
+    """Commands for changing player information and settings."""
+
+    def __init__(self, bot: DonguriGaeruBot):
+        self.bot = bot
+        self.log = logging.getLogger("donguri_gaeru")
+
+    @commands.command()
+    async def setname(self, ctx: commands.Context, name: str):
+        with Session() as session:
+            stmt = select(Player).where(Player.discord == ctx.author.id)
+            try:
+                player: Player = session.execute(stmt).scalars().one()
+            except NoResultFound:
+                await ctx.send(
+                    "You're not registered!\nRegister with "
+                    + f"`{ctx.prefix}register <name>`"
+                )
+                return
+
+            if name == player.name:
+                await ctx.send("That's already your name!")
+                return
+
+            stmt = update(Player).where(Player.discord == ctx.author.id)
+
+            try:
+                session.execute(stmt.values(name=name))
+            except IntegrityError:
+                session.rollback()
+                await ctx.send("This name is already taken!")
+                return
+            else:
+                session.commit()
+
+            await ctx.send(f"Your name was changed to {name}! Hello, {name}!")
+
+
 def setup(bot: DonguriGaeruBot):
     bot.add_cog(RegistrationCog(bot))
+    bot.add_cog(PlayerSettingsCog(bot))
