@@ -21,8 +21,7 @@ from database import Match, Player
 from discord.ext import commands
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
-from utils import checks
-from utils.command_utils import confirmation
+from utils import checks, helpers
 
 from donguri_gaeru import Session
 
@@ -75,11 +74,11 @@ class MatchCog(commands.Cog):
             session.refresh(playerB)
 
             msg: discord.Message = await ctx.send(
-                "Is this information correct?\n"
+                "Is this information correct?\n\n"
                 + f"({playerA.name}) {score1} - {score2} ({playerB.name})"
             )
 
-            if await confirmation(ctx, msg):
+            if await helpers.confirmation(ctx, msg):
                 match = Match(
                     playerA_id=playerA.id,
                     playerB_id=playerB.id,
@@ -91,8 +90,8 @@ class MatchCog(commands.Cog):
 
                 session.refresh(match)
                 await ctx.send(
-                    "Submitted match!\n"
-                    + f"`{match.id}`\n"
+                    "Submitted match!\n\n"
+                    + f"`{match.id}`: "
                     + f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
                 )
@@ -113,16 +112,16 @@ class MatchCog(commands.Cog):
                 return
 
             msg: discord.Message = await ctx.send(
-                "Are you sure you want to delete this match?\n"
-                + f"`{match_id}`\n"
+                "Are you sure you want to delete this match?\n\n"
+                + f"`{match_id}`: "
                 + f"({match.playerA.name}) {match.scoreA} - "
                 f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
             )
 
-            if await confirmation(ctx, msg):
+            if await helpers.confirmation(ctx, msg):
                 match.active = False
                 session.commit()
-                await ctx.send("Match has been deleted!")
+                await ctx.send(f"Match `{match_id}` has been deleted!")
 
     @commands.command()
     @checks.is_administrator()
@@ -150,18 +149,18 @@ class MatchCog(commands.Cog):
                 return
 
             msg: discord.Message = await ctx.send(
-                "Is this information correct?\n"
-                + f"`{match_id}`\n"
+                "Is this information correct?\n\n"
+                + f"`{match_id}`: "
                 + f"({match.playerA.name}) {part1} - "
                 + f"{part2} ({match.playerB.name})\n"
                 + f"at {match.created}"
             )
 
-            if await confirmation(ctx, msg):
+            if await helpers.confirmation(ctx, msg):
                 match.scoreA = score1
                 match.scoreB = score2
                 session.commit()
-                await ctx.send("Match has been fixed!")
+                await ctx.send(f"Match `{match_id}` has been fixed!")
 
 
 def setup(bot):

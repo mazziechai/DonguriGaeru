@@ -53,14 +53,16 @@ class DonguriGaeruBot(commands.Bot):
                 self.log.exception(
                     f"""Exception from {ctx.command.qualified_name}!\n
                     {"".join(traceback.format_exception(
-                        None, error, error.__traceback__
+                        type(error), error, error.__traceback__
                     ))}"""
                 )
 
                 await ctx.send(
                     f"""Exception from {ctx.command.qualified_name}!\n
                     ```{escape_markdown("".join(
-                        traceback.format_exception(None, error, error.__traceback__)
+                            traceback.format_exception(
+                                type(error), error, error.__traceback__
+                            )
                         )
                     )}```"""
                 )

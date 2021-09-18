@@ -16,7 +16,15 @@
 import re
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, validates
@@ -29,7 +37,7 @@ class Player(Base):
     __tablename__ = "players"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
-    discord = Column(Integer, default=None, unique=True, nullable=True)
+    discord = Column(BigInteger, default=None, unique=True, nullable=True)
     created = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     # TODO: Add username/password when creating Flask application.
 
