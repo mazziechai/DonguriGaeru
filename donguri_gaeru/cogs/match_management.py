@@ -36,10 +36,6 @@ class MatchCog(commands.Cog):
         self.log = logging.getLogger("donguri_gaeru")
 
     @commands.command()
-    async def ping(self, ctx: commands.Context):
-        await ctx.send("Pong!")
-
-    @commands.command()
     async def submit(
         self,
         ctx: commands.Context,
