@@ -1,4 +1,4 @@
-package fr.hiku;
+package source;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -15,6 +15,8 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 public class WorldRanking {
+
+	public GregorianCalendar HACK = new GregorianCalendar(1, 1, 2000);
 
 	public List<String> countryNames = new ArrayList<String>();
 	public List<String> jpCountryNames = new ArrayList<String>();
@@ -46,10 +48,10 @@ public class WorldRanking {
 			this.score2.add(score2);
 		}
 
-		public void apply() {
+		public void apply(GregorianCalendar asof_date) {
 			for (int i = 0; i < player1.size(); i++) {
 				//float points1 = (float) Math.sqrt(playerRatings.get(player2.get(i)) / playerRatings.get(player1.get(i))) * score1.get(i);
-				float points1 = getPointsForPlayer1(i);
+				float points1 = getPointsForPlayer1(i, asof_date);
 				if (points1 > 0) {
 					playerRatings.set(player1.get(i), playerRatings.get(player1.get(i)) * (1 + points1));
 					playerRatings.set(player2.get(i), playerRatings.get(player2.get(i)) / (1 + points1));
@@ -61,10 +63,10 @@ public class WorldRanking {
 			}
 		}
 
-		public float getPointsForPlayer1(int match) {
+		public float getPointsForPlayer1(int match, GregorianCalendar asof_date) {
 			float points1 = (float) Math.sqrt(playerRatings.get(player2.get(match)) / playerRatings.get(player1.get(match))) * score1.get(match);
 			points1 -= Math.sqrt(playerRatings.get(player1.get(match)) / playerRatings.get(player2.get(match))) * score2.get(match);
-			points1 *= coef * getTimeCoef() * getLvDifCoef(playerRatings.get(player1.get(match)), playerRatings.get(player2.get(match)));
+			points1 *= coef * getTimeCoef(asof_date) * getLvDifCoef(playerRatings.get(player1.get(match)), playerRatings.get(player2.get(match)));
 			return points1;
 		}
 
@@ -72,8 +74,8 @@ public class WorldRanking {
 			return (float) Math.max(0, 1.0 - (System.currentTimeMillis() - date.getTimeInMillis()) / (timeCoefCoef * 365.25 * 24 * 3600 * 1000));
 		}*/
 		//V2
-		public float getTimeCoef() {
-			return (float) (1.0 / (1.0 + Math.pow((System.currentTimeMillis() - date.getTimeInMillis()) / (365.25 * 24 * 3600 * 1000), 2) * timeCoefCoef));
+		public float getTimeCoef(GregorianCalendar asof_date) {
+			return (float) (1.0 / (1.0 + Math.pow((asof_date.getTimeInMillis() - date.getTimeInMillis()) / (365.25 * 24 * 3600 * 1000), 2) * timeCoefCoef));
 		}
 
 		public float getLvDifCoef(float r1, float r2) {
@@ -203,7 +205,7 @@ public class WorldRanking {
 			for (int j = 0; j < matches.get(i).player1.size(); j++) {
 				player1Rating.add(Math.log(playerRatings.get(matches.get(i).player1.get(j))));
 				player2Rating.add(Math.log(playerRatings.get(matches.get(i).player2.get(j))));
-				player1Score.add(matches.get(i).getPointsForPlayer1(j));
+				player1Score.add(matches.get(i).getPointsForPlayer1(j, HACK));
 				matchWeight.add((matches.get(i).score1.get(j) + matches.get(i).score2.get(j))
 						* matches.get(i).getLvDifCoef(playerRatings.get(matches.get(i).player1.get(j)), playerRatings.get(matches.get(i).player2.get(j))));
 			}
@@ -269,10 +271,10 @@ public class WorldRanking {
 		return bi;
 	}
 
-	public void playMatches(int times) {
+	public void playMatches(int times, GregorianCalendar asof_date) {
 		for (int i = 0; i < times; i++) {
 			for (int j = 0; j < matches.size(); j++) {
-				matches.get(j).apply();
+				matches.get(j).apply(asof_date);
 			}
 		}
 	}
@@ -588,7 +590,7 @@ public class WorldRanking {
 				if (strToAdd > 1)
 					strToAdd = 1 / strToAdd;
 
-				strToAdd *= m.getTimeCoef();
+				strToAdd *= m.getTimeCoef(HACK);
 				strToAdd *= m.score1.get(i) + m.score2.get(i);
 				strengths[m.player1.get(i)][m.player2.get(i)] += strToAdd;
 				strengths[m.player2.get(i)][m.player1.get(i)] += strToAdd;
@@ -1042,11 +1044,11 @@ public class WorldRanking {
 				for (int j = 0; j < matches.get(i).player1.size(); j++) {
 					if (matches.get(i).player1.get(j) == player) {
 						System.out.println(playerNames.get(player) + " " + matches.get(i).score1.get(j) + " - " + matches.get(i).score2.get(j) + " "
-								+ playerNames.get(matches.get(i).player2.get(j)) + " (" + (matches.get(i).getPointsForPlayer1(j) * 1000) + ")");
+								+ playerNames.get(matches.get(i).player2.get(j)) + " (" + (matches.get(i).getPointsForPlayer1(j, HACK) * 1000) + ")");
 					}
 					if (matches.get(i).player2.get(j) == player) {
 						System.out.println(playerNames.get(player) + " " + matches.get(i).score2.get(j) + " - " + matches.get(i).score1.get(j) + " "
-								+ playerNames.get(matches.get(i).player1.get(j)) + " (" + (-matches.get(i).getPointsForPlayer1(j) * 1000) + ")");
+								+ playerNames.get(matches.get(i).player1.get(j)) + " (" + (-matches.get(i).getPointsForPlayer1(j, HACK) * 1000) + ")");
 					}
 				}
 				System.out.println();
@@ -1782,8 +1784,10 @@ public class WorldRanking {
 		this.matches.add(matches);
 	}
 
-	public void pythonExecuteAlgorithm(int times) {
-		playMatches(times);
+	public void pythonExecuteAlgorithm(int times, String asof_date) {
+		sortMatchesByDate();
+		timeCoefCoef = 1.0;
+		playMatches(times, dateFromString(asof_date));
 	}
 
 }

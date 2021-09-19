@@ -53,7 +53,7 @@ parser.add_argument(
 
 def file2graph():
     # Load the dateset from the text file.
-    filename = os.path.join(os.path.dirname(__file__), "matches_aug_2021.txt")
+    filename = os.path.join(os.path.dirname(__file__), "source/matches_aug_2021.txt")
     with open(filename, "r", encoding="utf-8") as file:
         lines = file.readlines()
 
