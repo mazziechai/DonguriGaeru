@@ -1,4 +1,5 @@
 import math
+import random
 import time
 from collections import namedtuple
 
@@ -17,6 +18,7 @@ def hikuwr_rating(matches, asof_date, iterations):
     # Iteratively converge on the median player ratings, shuffle matches by week.
     start = time.time()
     for _ in PixelSpinner("hikuwr algorithm converging... ").iter(range(iterations)):
+        random.shuffle(matches)
         med_ratings = hikuwr_med_rating(matches, asof_date, med_ratings)
 
     fstring = "... success ({:0.1f}s elapsed, {:d} iterations)."
@@ -56,7 +58,7 @@ def hikuwr_certainty(matches, med_ratings):
 def hikuwr_coefficient(match, asof_date, ratings):
     # Compute the match time coefficent.
     time_coefficient = (asof_date - match.created).days / 365.25
-    time_coefficient = 1 / (1.0 * (time_coefficient ** 2) + 1)  # magic function
+    time_coefficient = 1 / (1.5 * (time_coefficient ** 2) + 1)  # magic function
 
     # Compute the match level coefficient.
     level_coefficientA = ratings[match.playerA] / ratings[match.playerB]

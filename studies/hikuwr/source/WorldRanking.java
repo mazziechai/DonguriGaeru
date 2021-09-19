@@ -1786,7 +1786,6 @@ public class WorldRanking {
 
 	public void pythonExecuteAlgorithm(int times, String asof_date) {
 		sortMatchesByDate();
-		timeCoefCoef = 1.0;
 		playMatches(times, dateFromString(asof_date));
 	}
 

@@ -4,7 +4,6 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
-from contextlib import suppress
 from datetime import datetime, timezone
 from itertools import chain
 from random import choice
@@ -58,18 +57,21 @@ def file2graph():
         lines = file.readlines()
 
     # Parse the dataset and construct the graph.
-    graph = nx.Graph()
+    graph = nx.MultiGraph()
     for line in lines:
-        if datematch := re.match(r"^(\d\d/\d\d/\d\d)$", line):
+        line = line.strip()
+        if datematch := re.match(r"(\d\d/\d\d/\d\d)", line):
             date = datetime.strptime(datematch.group(), "%d/%m/%y")
             date = date.replace(tzinfo=timezone.utc)
 
-        if gamematch := re.match(r"^(\S+) (\d+) (\d+) (\S+)$", line):
-            graph.add_node(playerA := gamematch.group(1), created=date)
-            graph.add_node(playerB := gamematch.group(4), created=date)
+        if gamematch := re.match(r"(.+) (\d+) (\d+) (.+)", line):
+            graph.add_node(playerA := gamematch.group(1))
+            graph.add_node(playerB := gamematch.group(4))
             graph.add_edge(
                 playerA,
                 playerB,
+                playerA=playerA,
+                playerB=playerB,
                 scoreA=int(gamematch.group(2)),
                 scoreB=int(gamematch.group(3)),
                 created=date,
@@ -92,12 +94,32 @@ def graph2database(dbname, session, graph):
     # Loop through each match and populate the database.
     bar = Bar(dbname, check_tty=False, suffix="%(percent)d%%")
     matches_bydate = sorted(graph.edges.data(), key=lambda match: match[2]["created"])
-    for match in bar.iter(matches_bydate):
-        with suppress(AssertionError):
-            idA = player(match[0], match[2]["created"])
-            idB = player(match[1], match[2]["created"])
-            session.add(Match(playerA_id=idA, playerB_id=idB, **match[2]))
+    failures = []
+    for _, _, match in bar.iter(matches_bydate):
+        try:
+            idA = player(match["playerA"], match["created"])
+            idB = player(match["playerB"], match["created"])
+            session.add(
+                Match(
+                    playerA_id=idA,
+                    playerB_id=idB,
+                    scoreA=match["scoreA"],
+                    scoreB=match["scoreB"],
+                    created=match["created"],
+                )
+            )
             session.commit()
+        except AssertionError:
+            failures.append(match)
+
+    print("\nThe following match records were not added to the database:")
+    fstring = (
+        "<Match(playerA={playerA}:{scoreA}, "
+        "playerB={playerB}:{scoreB}, "
+        "created={created})>"
+    )
+    for match in failures:
+        print(fstring.format(**match))
 
 
 def heroku(appname, graph):
