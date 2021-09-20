@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.imageio.ImageIO;
 
@@ -1785,7 +1787,11 @@ public class WorldRanking {
 	}
 
 	public void pythonExecuteAlgorithm(int times, String asof_date) {
-		sortMatchesByDate();
+		Collections.sort(matches, new Comparator<Matches>(){
+     		public int compare(Matches m1, Matches m2){
+         		return m1.date.compareTo(m2.date);
+     		}
+		});
 		playMatches(times, dateFromString(asof_date));
 	}
 

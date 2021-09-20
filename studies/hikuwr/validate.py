@@ -1,11 +1,12 @@
 import os
 import re
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
 import jpype
 from algorithm import Rating, hikuwr_rating
-from sqlalchemy import create_engine
+from sqlalchemy import asc, create_engine
 from sqlalchemy.orm import Session
 
 from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
@@ -39,14 +40,36 @@ def validate_algorithm():
     asof_date = datetime(2020, 2, 1, tzinfo=timezone.utc)
     iterations = 10000
 
+    def timer(msg, start):
+        end = time.time()
+        print("   - {} ({:0.1f}s elapsed)".format(msg, end - start))
+        return end
+
     # Open the hikuwr database and query all matches prior to February 2020.
+    print(
+        "validate_algorithm (as of {}, {:d} iterations)".format(
+            asof_date.strftime("%d/%m/%y"), iterations
+        )
+    )
     with dbsession(dbname="hikuwr") as session:
-        matches = session.query(Match).filter(Match.created <= asof_date).all()
+        start = time.time()
+        matches = (
+            session.query(Match)
+            .filter(Match.created <= asof_date)
+            .order_by(asc(Match.created))
+            .all()
+        )
+        start = timer("Load {:d} matches from database.".format(len(matches)), start)
 
         # Compute the results for comparison.
         wiki_results = load_wiki_results(session)
+        start = timer("Load {:d} ratings from wiki.".format(len(wiki_results)), start)
+
         java_results = load_java_results(session, matches, asof_date, iterations)
+        start = timer("Compute ratings with Java algorithm.", start)
+
         python_results = hikuwr_rating(matches, asof_date, iterations)
+        start = timer("Compute ratings with Python algorithm.", start)
 
     # Get the set of players common to all three results, sorted by wiki minimum rating.
     players = set(wiki_results) & set(java_results)  # & set(python_results)
