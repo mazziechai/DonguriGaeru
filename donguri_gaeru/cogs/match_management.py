@@ -20,7 +20,6 @@ from bot import DonguriGaeruBot
 from database import Match, Player
 from discord.ext import commands
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
 from utils import checks, helpers
 
 from donguri_gaeru import Session
@@ -39,35 +38,49 @@ class MatchCog(commands.Cog):
     async def submit(
         self,
         ctx: commands.Context,
-        player1: str,
         score1: int,
         score2: int,
-        player2: str,
+        player2: helpers.NameOrUser,
     ):
         with Session() as session:
             stmt = select(Player)
             playerA = (
-                session.execute(stmt.where(Player.name.ilike(player1)))
-                .scalars()
-                .first()
-            )
-            playerB = (
-                session.execute(stmt.where(Player.name.ilike(player2)))
+                session.execute(stmt.where(Player.discord == ctx.author.id))
                 .scalars()
                 .first()
             )
 
             if playerA is None:
-                playerA = Player(name=player1)
-                session.add(playerA)
-            if playerB is None:
-                playerB = Player(name=player2)
-                session.add(playerB)
+                await ctx.send(
+                    "You're not registered! "
+                    + f"Run `{ctx.prefix}register <name>` to register."
+                )
+                return
 
-            session.commit()
+            if isinstance(player2, str):
+                playerB: Player = (
+                    session.execute(stmt.where(Player.name.ilike(player2)))
+                    .scalars()
+                    .first()
+                )
 
-            session.refresh(playerA)
-            session.refresh(playerB)
+                if playerB is None:
+                    playerB = Player(name=player2)
+                    session.add(playerB)
+
+            else:
+                playerB: Player = (
+                    session.execute(stmt.where(Player.discord == player2.id))
+                    .scalars()
+                    .first()
+                )
+
+                if playerB is None:
+                    await ctx.send(
+                        "Player 2 isn't registered! "
+                        + f"Run `{ctx.prefix}register <name>` to register."
+                    )
+                    return
 
             msg: discord.Message = await ctx.send(
                 "Is this information correct?\n\n"
@@ -75,6 +88,10 @@ class MatchCog(commands.Cog):
             )
 
             if await helpers.confirmation(ctx, msg):
+                session.commit()
+
+                session.refresh(playerB)
+
                 match = Match(
                     playerA_id=playerA.id,
                     playerB_id=playerB.id,
@@ -91,15 +108,83 @@ class MatchCog(commands.Cog):
                     + f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
                 )
+            else:
+                session.rollback()
 
-    @commands.command()
+    @commands.group()
     @checks.is_administrator()
+    async def admin(self, ctx):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @admin.command(name="submit")
+    async def adminsubmit(
+        self,
+        ctx: commands.Context,
+        player1: str,
+        score1: int,
+        score2: int,
+        player2: str,
+    ):
+        with Session() as session:
+            stmt = select(Player)
+
+            playerA = (
+                session.execute(stmt.where(Player.name.ilike(player1)))
+                .scalars()
+                .first()
+            )
+            playerB = (
+                session.execute(stmt.where(Player.name.ilike(player2)))
+                .scalars()
+                .first()
+            )
+
+            if playerA is None:
+                playerA = Player(name=player1)
+                session.add(playerA)
+
+            if playerB is None:
+                playerB = Player(name=player2)
+                session.add(playerB)
+
+            msg: discord.Message = await ctx.send(
+                "Is this information correct?\n\n"
+                + f"({playerA.name}) {score1} - {score2} ({playerB.name})"
+            )
+
+            if await helpers.confirmation(ctx, msg):
+                session.commit()
+
+                session.refresh(playerA)
+                session.refresh(playerB)
+
+                match = Match(
+                    playerA_id=playerA.id,
+                    playerB_id=playerB.id,
+                    scoreA=score1,
+                    scoreB=score2,
+                )
+                session.add(match)
+                session.commit()
+
+                session.refresh(match)
+                await ctx.send(
+                    "Submitted match!\n\n"
+                    + f"`{match.id}`: "
+                    + f"({match.playerA.name}) {match.scoreA} - "
+                    f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+                )
+            else:
+                session.rollback()
+
+    @admin.command()
     async def delete(self, ctx: commands.Context, match_id: int):
         with Session() as session:
             stmt = select(Match).where(Match.id == match_id)
-            try:
-                match: Match = session.execute(stmt).scalars().one()
-            except NoResultFound:
+            match: Match = session.execute(stmt).scalars().first()
+
+            if match is None:
                 await ctx.send(f"Match {match_id} doesn't exist!")
                 return
 
@@ -119,14 +204,14 @@ class MatchCog(commands.Cog):
                 session.commit()
                 await ctx.send(f"Match `{match_id}` has been deleted!")
 
-    @commands.command()
-    @checks.is_administrator()
+    @admin.command()
     async def fix(self, ctx: commands.Context, match_id: int, score1: int, score2: int):
         with Session() as session:
             stmt = select(Match).where(Match.id == match_id)
-            try:
-                match: Match = session.execute(stmt).scalars().one()
-            except NoResultFound:
+
+            match: Match = session.execute(stmt).scalars().first()
+
+            if match is None:
                 await ctx.send(f"Match {match_id} doesn't exist!")
                 return
 

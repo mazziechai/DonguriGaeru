@@ -35,3 +35,11 @@ async def confirmation(ctx: commands.Context, msg: discord.Message):
 
     await ctx.send("Cancelling!")
     return False
+
+
+class NameOrUser(commands.UserConverter):
+    async def convert(self, ctx, argument):
+        try:
+            return await super().convert(ctx, argument)
+        except commands.errors.UserNotFound:
+            return argument
