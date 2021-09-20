@@ -59,6 +59,8 @@ class RegistrationCog(commands.Cog):
                 session.add(player)
                 session.commit()
 
+                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
+                self.log.info(f"{usr} registered as {name}!")
                 await ctx.send(f"Successfully registered as `{name}`!")
 
 
@@ -97,6 +99,7 @@ class PlayerSettingsCog(commands.Cog):
             else:
                 session.commit()
 
+            self.log.info(f"{player.name} changed their name to {name}!")
             await ctx.send(f"Your name was changed to {name}! Hello, {name}!")
 
 

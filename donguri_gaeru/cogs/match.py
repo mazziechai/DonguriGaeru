@@ -53,7 +53,7 @@ class MatchCog(commands.Cog):
             if playerA is None:
                 await ctx.send(
                     "You're not registered! "
-                    + f"Run `{ctx.prefix}register <name>` to register."
+                    f"Run `{ctx.prefix}register <name>` to register."
                 )
                 return
 
@@ -78,13 +78,13 @@ class MatchCog(commands.Cog):
                 if playerB is None:
                     await ctx.send(
                         "Player 2 isn't registered! "
-                        + f"Run `{ctx.prefix}register <name>` to register."
+                        f"Run `{ctx.prefix}register <name>` to register."
                     )
                     return
 
             msg: discord.Message = await ctx.send(
                 "Is this information correct?\n\n"
-                + f"({playerA.name}) {score1} - {score2} ({playerB.name})"
+                f"({playerA.name}) {score1} - {score2} ({playerB.name})"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -102,12 +102,16 @@ class MatchCog(commands.Cog):
                 session.commit()
 
                 session.refresh(match)
-                await ctx.send(
-                    "Submitted match!\n\n"
-                    + f"`{match.id}`: "
-                    + f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+
+                match_string = (
+                    f"`{match.id}`: "
+                    f"({match.playerA.name}) {match.scoreA} - "
+                    f"{match.scoreB} ({match.playerB.name})\n"
+                    f"at {match.created}"
                 )
+                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
+                self.log.info(f"{usr} submitted match:\n{match_string}")
+                await ctx.send(f"Submitted match!\n\n{match_string}")
             else:
                 session.rollback()
 
@@ -150,7 +154,7 @@ class MatchCog(commands.Cog):
 
             msg: discord.Message = await ctx.send(
                 "Is this information correct?\n\n"
-                + f"({playerA.name}) {score1} - {score2} ({playerB.name})"
+                f"({playerA.name}) {score1} - {score2} ({playerB.name})"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -169,12 +173,16 @@ class MatchCog(commands.Cog):
                 session.commit()
 
                 session.refresh(match)
-                await ctx.send(
-                    "Submitted match!\n\n"
-                    + f"`{match.id}`: "
-                    + f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+
+                match_string = (
+                    f"`{match.id}`: "
+                    f"({match.playerA.name}) {match.scoreA} - "
+                    f"{match.scoreB} ({match.playerB.name})\n"
+                    f"at {match.created}"
                 )
+                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
+                self.log.info(f"{usr} submitted match:\n{match_string}")
+                await ctx.send(f"Submitted match!\n\n{match_string}")
             else:
                 session.rollback()
 
@@ -194,14 +202,18 @@ class MatchCog(commands.Cog):
 
             msg: discord.Message = await ctx.send(
                 "Are you sure you want to delete this match?\n\n"
-                + f"`{match_id}`: "
-                + f"({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})\n" + f"at {match.created}"
+                f"`{match_id}`: "
+                f"({match.playerA.name}) {match.scoreA} - "
+                f"{match.scoreB} ({match.playerB.name})\n"
+                f"at {match.created}"
             )
 
             if await helpers.confirmation(ctx, msg):
                 match.active = False
                 session.commit()
+
+                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
+                self.log.info(f"Match {match_id} has been deleted by {usr}!")
                 await ctx.send(f"Match `{match_id}` has been deleted!")
 
     @admin.command()
@@ -231,16 +243,23 @@ class MatchCog(commands.Cog):
 
             msg: discord.Message = await ctx.send(
                 "Is this information correct?\n\n"
-                + f"`{match_id}`: "
-                + f"({match.playerA.name}) {part1} - "
-                + f"{part2} ({match.playerB.name})\n"
-                + f"at {match.created}"
+                f"`{match_id}`: "
+                f"({match.playerA.name}) {part1} - "
+                f"{part2} ({match.playerB.name})\n"
+                f"at {match.created}"
             )
 
             if await helpers.confirmation(ctx, msg):
                 match.scoreA = score1
                 match.scoreB = score2
                 session.commit()
+
+                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
+                self.log.info(
+                    f"Match {match_id} has been fixed by {usr}!\n"
+                    f"New scores: ({match.playerA.name}) {part1} - "
+                    f"{part2} ({match.playerB.name})"
+                )
                 await ctx.send(f"Match `{match_id}` has been fixed!")
 
 
