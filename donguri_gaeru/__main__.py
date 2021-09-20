@@ -92,4 +92,4 @@ log.info("Logging in...")
 if not TOKEN:
     raise Exception("A token was not specified in the config!")
 
-bot.run(TOKEN, bot=True, reconnect=True)
+bot.run(TOKEN, reconnect=True)
