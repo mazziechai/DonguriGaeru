@@ -18,7 +18,7 @@ import logging
 from bot import DonguriGaeruBot
 from database import Match, Player
 from discord.ext import commands
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from utils import helpers
 
 from donguri_gaeru import Session
@@ -53,25 +53,33 @@ class InfoCog(commands.Cog):
                 )
 
             if player is None:
-                await ctx.send("That player isn't registered!")
+                await ctx.send("That player isn't valid!")
                 return
 
             if type is None:
                 await ctx.send(
                     f"__{player.name}__\nMatches played: {len(player.matches)}\n"
-                    f"Registered: {helpers.time(player.created)}\n"
+                    f"Registered {helpers.time(player.created)}\n"
                     f"Type `{ctx.prefix}info player {player.name} recent` to get this "
                     "player's matches."
                 )
             elif type == "recent":
-                matches = sorted(
-                    player.matches, reverse=True, key=lambda match: match.created
+                stmt = (
+                    select(Match)
+                    .where(
+                        or_(
+                            player.id == Match.playerA_id, player.id == Match.playerB_id
+                        )
+                    )
+                    .order_by(Match.created.desc())
+                    .limit(5)
                 )
+                matches = session.execute(stmt).scalars().all()
                 text = ""
                 for match in matches:
                     text += (
                         f"\n`{match.id}`: ({match.playerA.name}) {match.scoreA} - "
-                        f"{match.scoreB} ({match.playerB.name})"
+                        f"{match.scoreB} ({match.playerB.name}) "
                         f"{helpers.time(match.created)}"
                     )
 
@@ -90,7 +98,7 @@ class InfoCog(commands.Cog):
             await ctx.send(
                 f"\n`{match.id}`: \n{'**[DELETED]** ' if not match.active else ''}"
                 f"\n`{match.id}`: ({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})"
+                f"{match.scoreB} ({match.playerB.name}) "
                 f"{helpers.time(match.created)}"
             )
 
