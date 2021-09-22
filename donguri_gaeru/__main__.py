@@ -59,6 +59,10 @@ stream_handler.setFormatter(fmt)
 root_logger.addHandler(file_handler)
 root_logger.addHandler(stream_handler)
 
+engine_logger = logging.getLogger("sqlalchemy.engine.Engine")
+engine_logger.propagate = False
+engine_logger.addHandler(stream_handler)
+
 # Setting up the database
 log = logging.getLogger("donguri_gaeru")
 
