@@ -28,6 +28,8 @@ public class WorldRanking {
 	public List<Integer> playerAliasID = new ArrayList<Integer>();
 	public List<Float> playerRatings = new ArrayList<Float>();
 	public List<Matches> matches = new ArrayList<Matches>();
+	public List<Float> playerUpperBounds = new ArrayList<Float>();
+	public List<Float> playerLowerBounds = new ArrayList<Float>();
 	public float coef = 0.001f;
 	public static double timeCoefCoef = 1.5;
 
@@ -579,7 +581,7 @@ public class WorldRanking {
 		playerRatings.add(rating);
 	}
 
-	public float[][] constructMatchupStrengths() {
+	public float[][] constructMatchupStrengths(GregorianCalendar asof_date) {
 		float[][] strengths = new float[playerNames.size()][playerNames.size()];
 		for (int i = 0; i < strengths.length; i++) {
 			for (int j = 0; j < strengths[i].length; j++) {
@@ -592,7 +594,7 @@ public class WorldRanking {
 				if (strToAdd > 1)
 					strToAdd = 1 / strToAdd;
 
-				strToAdd *= m.getTimeCoef(HACK);
+				strToAdd *= m.getTimeCoef(asof_date);
 				strToAdd *= m.score1.get(i) + m.score2.get(i);
 				strengths[m.player1.get(i)][m.player2.get(i)] += strToAdd;
 				strengths[m.player2.get(i)][m.player1.get(i)] += strToAdd;
@@ -711,7 +713,7 @@ public class WorldRanking {
 
 	public void printOrderedRatingsWithCertainty() {
 		int[] ordered = getOrderedRatings();
-		float[] c = constructAllRatingCertainties(constructMatchupStrengths());
+		float[] c = constructAllRatingCertainties(constructMatchupStrengths(HACK));
 		//float[] c = constructRatingCertaintyFromPlayer(getPlayer("ペルシャ"),constructMatchupStrengths());
 		for (int i = 0; i < playerNames.size(); i++) {
 			if (c[ordered[i]] > 0)
@@ -724,7 +726,7 @@ public class WorldRanking {
 		for (int i = 0; i < names.length; i++)
 			names2.add(names[i]);
 		int[] ordered = getOrderedRatings();
-		float[] c = constructAllRatingCertainties(constructMatchupStrengths());
+		float[] c = constructAllRatingCertainties(constructMatchupStrengths(HACK));
 		//float[] c = constructRatingCertaintyFromPlayer(getPlayer("ペルシャ"),constructMatchupStrengths());
 		for (int i = 0; i < playerNames.size(); i++) {
 			if (names2.contains(playerNames.get(ordered[i])))
@@ -734,7 +736,7 @@ public class WorldRanking {
 
 	public void printOrderedRatingsWithCertainty(boolean[] show) {
 		int[] ordered = getOrderedRatings();
-		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths());
+		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths(HACK));
 		//float[] c = constructRatingCertaintyFromPlayer(getPlayer("ペルシャ"),constructMatchupStrengths());
 		for (int i = 0; i < playerNames.size(); i++) {
 			if (show[ordered[i]] && c[ordered[i]] > 1)
@@ -743,7 +745,7 @@ public class WorldRanking {
 	}
 
 	public void printOrderedRatingsWithCertaintyV2(boolean[] show) {
-		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths());
+		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths(HACK));
 		float[] lowerRatings = new float[playerRatings.size()];
 		float[] upperRatings = new float[playerRatings.size()];
 		for (int i = 0; i < playerRatings.size(); i++) {
@@ -763,7 +765,7 @@ public class WorldRanking {
 	}
 
 	public void printOrderedRatingsWithCertaintyV2ForWiki(boolean[] show, boolean jpVer) {
-		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths());
+		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths(HACK));
 		float[] lowerRatings = new float[playerRatings.size()];
 		float[] upperRatings = new float[playerRatings.size()];
 		for (int i = 0; i < playerRatings.size(); i++) {
@@ -889,7 +891,7 @@ public class WorldRanking {
 	}
 
 	public float getTotalCertainty() {
-		float[][] d = constructMatchupStrengths();
+		float[][] d = constructMatchupStrengths(HACK);
 		float[] c = constructAllRatingCertainties(d);
 		float total = 0f;
 		for (int i = 0; i < c.length; i++) {
@@ -911,7 +913,7 @@ public class WorldRanking {
 	public void printUsefulMatchup() {
 		float c = getTotalCertainty();
 
-		float[][] ms = constructMatchupStrengths();
+		float[][] ms = constructMatchupStrengths(HACK);
 		for (int p1 = 0; p1 < playerNames.size(); p1++) {
 			for (int p2 = 0; p2 < playerNames.size(); p2++) {
 				//p1 = getPlayer("ともろん");
@@ -1386,9 +1388,9 @@ public class WorldRanking {
 	}
 
 	public void printRankingForLeagueSheet() {
-		boolean[] show = removeCountry(removeSplitted(accessibleFromPlayerList(getPlayer("Hiku"), constructMatchupStrengths())), "Japan", "South Korea");
+		boolean[] show = removeCountry(removeSplitted(accessibleFromPlayerList(getPlayer("Hiku"), constructMatchupStrengths(HACK))), "Japan", "South Korea");
 
-		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths());
+		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths(HACK));
 		float[] lowerRatings = new float[playerRatings.size()];
 		float[] upperRatings = new float[playerRatings.size()];
 		for (int i = 0; i < playerRatings.size(); i++) {
@@ -1792,7 +1794,15 @@ public class WorldRanking {
          		return m1.date.compareTo(m2.date);
      		}
 		});
-		playMatches(times, dateFromString(asof_date));
+		GregorianCalendar ratingdate = dateFromString(asof_date);
+		playMatches(times, ratingdate);
+
+		float[] c = constructAllRatingCertaintiesV2(constructMatchupStrengths(ratingdate));
+		for (int i = 0; i < playerRatings.size(); i++) {
+			float certainty = (float) (0.6f / Math.pow(c[i], 1.2));
+			playerLowerBounds.add(playerRatings.get(i) / ((1 + certainty)));
+			playerUpperBounds.add(playerRatings.get(i) * ((1 + certainty)));
+		}
 	}
 
 }

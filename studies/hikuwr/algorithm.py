@@ -1,9 +1,9 @@
 import math
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from functools import partial
 
 Rating = namedtuple("Rating", "min med max")
-MatchTuple = namedtuple("MatchTuple", "playerA playerB delta")
+MatchTuple = namedtuple("MatchTuple", "playerA playerB points delta")
 
 
 def hikuwr_rating(matches, asof_date, iterations):
@@ -20,13 +20,16 @@ def hikuwr_rating(matches, asof_date, iterations):
     med_ratings, players = dict(), dict()
     for match in matches:
         years = (asof_date - match.created).days / 365.25
-        tcoef = 1 / (1.5 * (years ** 2) + 1) / 1000  # magic function
+        tcoef = 1 / (1.5 * (years ** 2) + 1)  # magic function
         match_tuples.append(
             MatchTuple(
                 playerA=match.playerA.name,
                 playerB=match.playerB.name,
+                points=(match.scoreA + match.scoreB) * tcoef,
                 delta=partial(
-                    delta, scoreA=match.scoreA * tcoef, scoreB=match.scoreB * tcoef
+                    delta,
+                    scoreA=match.scoreA * tcoef / 1000,
+                    scoreB=match.scoreB * tcoef / 1000,
                 ),
             )
         )
@@ -45,9 +48,25 @@ def hikuwr_rating(matches, asof_date, iterations):
             med_ratings[match.playerA] = ratingA * alpha
             med_ratings[match.playerB] = ratingB / alpha
 
-    # TODO: Compute the rating uncertainty boundaries.
-    ratings = {
-        players[name]: Rating(min=rating, med=rating, max=rating)
-        for name, rating in med_ratings.items()
-    }
+    # Compute the matchup strengths.
+    matchups = defaultdict(int)
+    for match in match_tuples:
+        lvlcoef = med_ratings[match.playerA] / med_ratings[match.playerB]
+        partial_strength = match.points * min(lvlcoef, 1 / lvlcoef)
+        matchups[frozenset([match.playerA, match.playerB])] += partial_strength
+
+    # Compute the certainties.
+    ratings = {}
+    for player, playerobject in players.items():
+        certainty = 0
+        for matchup, strength in matchups.items():
+            if player in matchup:
+                certainty += min(1, math.sqrt(strength) / 10)
+
+        twisted_certainty = 0.6 / (certainty ** 1.2)
+        lbound = med_ratings[player] / (1 + twisted_certainty)
+        ubound = med_ratings[player] * (1 + twisted_certainty)
+
+        ratings[playerobject] = Rating(min=lbound, med=med_ratings[player], max=ubound)
+
     return ratings

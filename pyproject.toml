@@ -28,6 +28,7 @@ JPype1 = "^1.3.0"
 
 [tool.poetry.scripts]
 hikuwr = "studies.hikuwr.hikuwr:start"
+validate = "studies.hikuwr.validate:main"
 
 [tool.isort]
 profile = "black"

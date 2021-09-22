@@ -5,12 +5,13 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 import jpype
-from algorithm import Rating, hikuwr_rating
 from sqlalchemy import asc, create_engine
 from sqlalchemy.orm import Session
 
 from config import LOCAL_SQL_HOSTNAME, LOCAL_SQL_PASSWORD, LOCAL_SQL_USERNAME
 from donguri_gaeru.database import Match, Player
+
+from .algorithm import Rating, hikuwr_rating
 
 
 @contextmanager
@@ -141,15 +142,22 @@ def load_java_results(session, matches, asof_date, iterations):
         )
 
     WorldRanking.pythonExecuteAlgorithm(iterations, asof_date.strftime("%d/%m/%y"))
+    output = zip(
+        WorldRanking.playerNames,
+        WorldRanking.playerRatings,
+        WorldRanking.playerLowerBounds,
+        WorldRanking.playerUpperBounds,
+    )
     results = {}
-    for name, med_rating in zip(WorldRanking.playerNames, WorldRanking.playerRatings):
+    for name, med_rating, lb_rating, ub_rating in output:
         player = session.query(Player).filter(Player.name == str(name)).one()
-        rating = Rating(min=med_rating, med=med_rating, max=med_rating)
+        rating = Rating(min=lb_rating, med=med_rating, max=ub_rating)
         results[player] = rating
 
     jpype.shutdownJVM()
     return results
 
 
-if __name__ == "__main__":
+def main():
+    print()
     validate_algorithm()
