@@ -92,7 +92,7 @@ class AdminCog(commands.Cog):
                     f"`{match.id}`: "
                     f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n"
-                    f"on {match.created}"
+                    f"{helpers.time(match.created)}"
                 )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(f"{usr} submitted match:\n{match_string}")
@@ -119,7 +119,7 @@ class AdminCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {match.scoreA} - "
                 f"{match.scoreB} ({match.playerB.name})\n"
-                f"on {match.created}"
+                f"{helpers.time(match.created)}"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -160,7 +160,7 @@ class AdminCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {part1} - "
                 f"{part2} ({match.playerB.name})\n"
-                f"on {match.created}"
+                f"{helpers.time(match.created)}"
             )
 
             if await helpers.confirmation(ctx, msg):

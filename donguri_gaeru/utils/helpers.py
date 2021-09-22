@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from datetime import datetime, timezone
 
 import discord
 from discord.ext import commands
@@ -43,3 +44,7 @@ class NameOrUser(commands.UserConverter):
             return await super().convert(ctx, argument)
         except commands.errors.UserNotFound:
             return argument
+
+
+def time(time: datetime):
+    return time.astimezone(tz=timezone.utc).strftime("on %Y-%m-%d at %H:%M %Z")

@@ -109,7 +109,7 @@ class PlayerMatchCog(commands.Cog):
                     f"`{match.id}`: "
                     f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n"
-                    f"on {match.created}"
+                    f"{helpers.time(match.created)}"
                 )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(f"{usr} submitted match:\n{match_string}")
