@@ -25,95 +25,10 @@ from utils import checks, helpers
 from donguri_gaeru import Session
 
 
-class MatchCog(commands.Cog):
-    """
-    Commands for submitting, fixing, and deleting matches from the database.
-    """
-
-    def __init__(self, bot: DonguriGaeruBot):
+class AdminCog(commands.Cog):
+    def __init__(self, bot):
         self.bot = bot
         self.log = logging.getLogger("donguri_gaeru")
-
-    @commands.command()
-    async def submit(
-        self,
-        ctx: commands.Context,
-        score1: int,
-        score2: int,
-        player2: helpers.NameOrUser,
-    ):
-        with Session() as session:
-            stmt = select(Player)
-            playerA = (
-                session.execute(stmt.where(Player.discord == ctx.author.id))
-                .scalars()
-                .first()
-            )
-
-            if playerA is None:
-                await ctx.send(
-                    "You're not registered! "
-                    f"Run `{ctx.prefix}register <name>` to register."
-                )
-                return
-
-            if isinstance(player2, str):
-                playerB: Player = (
-                    session.execute(stmt.where(Player.name.ilike(player2)))
-                    .scalars()
-                    .first()
-                )
-
-                if playerB is None:
-                    playerB = Player(name=player2)
-                    session.add(playerB)
-
-            else:
-                playerB: Player = (
-                    session.execute(stmt.where(Player.discord == player2.id))
-                    .scalars()
-                    .first()
-                )
-
-                if playerB is None:
-                    await ctx.send(
-                        "Player 2 isn't registered! "
-                        f"Run `{ctx.prefix}register <name>` to register."
-                    )
-                    return
-
-            msg: discord.Message = await ctx.send(
-                "Is this information correct?\n\n"
-                f"({playerA.name}) {score1} - {score2} ({playerB.name})"
-            )
-
-            if await helpers.confirmation(ctx, msg):
-                session.commit()
-
-                session.refresh(playerB)
-
-                match = Match(
-                    playerA_id=playerA.id,
-                    playerB_id=playerB.id,
-                    scoreA=score1,
-                    scoreB=score2,
-                )
-                session.add(match)
-                session.commit()
-
-                session.refresh(match)
-
-                match_string = (
-                    f"`{match.id}`: "
-                    f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n"
-                    f"on {match.created}"
-                )
-                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
-                self.log.info(f"{usr} submitted match:\n{match_string}")
-                await ctx.send(f"Submitted match!\n\n{match_string}")
-            else:
-                session.rollback()
 
     @commands.group()
     @checks.is_administrator()
@@ -256,11 +171,11 @@ class MatchCog(commands.Cog):
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(
                     f"Match {match_id} has been fixed by {usr}!\n"
-                    f"New scores: ({match.playerA.name}) {part1} - "
-                    f"{part2} ({match.playerB.name})"
+                    f"New scores: ({match.playerA.name}) {score1} - "
+                    f"{score2} ({match.playerB.name})"
                 )
                 await ctx.send(f"Match `{match_id}` has been fixed!")
 
 
-def setup(bot):
-    bot.add_cog(MatchCog(bot))
+def setup(bot: DonguriGaeruBot):
+    bot.add_cog(AdminCog(bot))
