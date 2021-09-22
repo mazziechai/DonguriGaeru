@@ -107,7 +107,7 @@ class MatchCog(commands.Cog):
                     f"`{match.id}`: "
                     f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n"
-                    f"at {match.created}"
+                    f"on {match.created}"
                 )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(f"{usr} submitted match:\n{match_string}")
@@ -118,8 +118,7 @@ class MatchCog(commands.Cog):
     @commands.group()
     @checks.is_administrator()
     async def admin(self, ctx):
-        if ctx.invoked_subcommand is None:
-            pass
+        pass
 
     @admin.command(name="submit")
     async def adminsubmit(
@@ -178,7 +177,7 @@ class MatchCog(commands.Cog):
                     f"`{match.id}`: "
                     f"({match.playerA.name}) {match.scoreA} - "
                     f"{match.scoreB} ({match.playerB.name})\n"
-                    f"at {match.created}"
+                    f"on {match.created}"
                 )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(f"{usr} submitted match:\n{match_string}")
@@ -205,7 +204,7 @@ class MatchCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {match.scoreA} - "
                 f"{match.scoreB} ({match.playerB.name})\n"
-                f"at {match.created}"
+                f"on {match.created}"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -246,7 +245,7 @@ class MatchCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {part1} - "
                 f"{part2} ({match.playerB.name})\n"
-                f"at {match.created}"
+                f"on {match.created}"
             )
 
             if await helpers.confirmation(ctx, msg):
