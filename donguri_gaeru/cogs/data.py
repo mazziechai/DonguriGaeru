@@ -16,7 +16,7 @@
 import logging
 
 from bot import DonguriGaeruBot
-from database import Player
+from database import Match, Player
 from discord.ext import commands
 from sqlalchemy import select
 from utils import helpers
@@ -73,6 +73,22 @@ class InfoCog(commands.Cog):
                     )
 
                 await ctx.send(f"__{player.name}__\nRecent matches:{text}")
+
+    @info.command()
+    async def match(self, ctx: commands.Context, match_id: int):
+        with Session() as session:
+            result = session.execute(select(Match).where(Match.id == match_id))
+            match: Match = result.scalars().first()
+
+            if match is None:
+                await ctx.send("That is not a valid match!")
+                return
+
+            await ctx.send(
+                f"\n`{match.id}`: \n{'**[DELETED]** ' if not match.active else ''}"
+                f"({match.playerA.name}) {match.scoreA} - "
+                f"{match.scoreB} ({match.playerB.name}) on {match.created}"
+            )
 
 
 def setup(bot: DonguriGaeruBot):
