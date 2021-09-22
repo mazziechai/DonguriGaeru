@@ -26,6 +26,7 @@ from config import (
     DB_NAME,
     DB_PASSWORD,
     DB_USERNAME,
+    DEBUG,
     LOG_LEVEL,
     PREFIX,
     TOKEN,
@@ -74,7 +75,7 @@ url = sql.format(
     username=DB_USERNAME, password=DB_PASSWORD, hostname=DB_HOSTNAME, db_name=DB_NAME
 )
 
-engine = create_engine(url, future=True)
+engine = create_engine(url, future=True, echo=DEBUG)
 Base.metadata.create_all(engine)
 
 Session.configure(bind=engine)
