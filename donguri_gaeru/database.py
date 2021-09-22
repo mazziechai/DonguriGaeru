@@ -76,7 +76,7 @@ class Match(Base):
     scoreB = Column(Integer, nullable=False)
     handshakeA = Column(Boolean, server_default="false", nullable=False)
     handshakeB = Column(Boolean, server_default="false", nullable=False)
-    created = Column(DateTime, server_default=func.now(), nullable=False)
+    created = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     active = Column(Boolean, server_default="true", nullable=False)
 
     playerA = relationship("Player", foreign_keys=playerA_id, backref="matches_asA")
