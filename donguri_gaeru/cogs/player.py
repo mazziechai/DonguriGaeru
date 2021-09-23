@@ -21,7 +21,7 @@ import discord
 from bot import DonguriGaeruBot
 from database import Match, Player
 from discord.ext import commands
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from utils import helpers
 
@@ -177,10 +177,8 @@ class PlayerSettingsCog(commands.Cog):
 
             old_name = player.name
 
-            stmt = update(Player).where(Player.discord == ctx.author.id)
-
             try:
-                session.execute(stmt.values(name=name))
+                player.name = name
             except IntegrityError:
                 session.rollback()
                 await ctx.send("This name is already taken!")

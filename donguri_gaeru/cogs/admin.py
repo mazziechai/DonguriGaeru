@@ -14,12 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Union
 
 import discord
 from bot import DonguriGaeruBot
 from database import Match, Player
 from discord.ext import commands
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from utils import checks, helpers
 
 from donguri_gaeru import Session
@@ -166,6 +168,67 @@ class AdminCog(commands.Cog):
                     f"{score2} ({match.playerB.name})"
                 )
                 await ctx.send(f"Match `{match_id}` has been fixed!")
+
+    @admin.command()
+    async def player(
+        self,
+        ctx: commands.Context,
+        user: Union[discord.User, str],
+        attribute: str,
+        value: Union[int, str],
+    ):
+        with Session() as session:
+            stmt = select(Player)
+            if isinstance(user, str):
+                player: Player = (
+                    session.execute(stmt.where(Player.name.ilike(user)))
+                    .scalars()
+                    .first()
+                )
+            else:
+                player: Player = (
+                    session.execute(stmt.where(Player.discord == user.id))
+                    .scalars()
+                    .first()
+                )
+
+            if player is None:
+                await ctx.send("That player isn't registered!")
+                return
+
+            name = player.name
+
+            try:
+                if attribute == "name":
+                    msg = await ctx.send(
+                        "Is this information correct?\n\n"
+                        f"Set {player.name}'s name to {value}"
+                    )
+                    if await helpers.confirmation(ctx, msg):
+                        player.name = value
+                        self.log.info(f"Admin set {name}'s name to {value}!")
+                        await ctx.send(f"Set {name}'s name to {value}!")
+                elif attribute == "discord":
+                    if not isinstance(value, int):
+                        await ctx.send("The value must be a number!")
+                        return
+                    msg = await ctx.send(
+                        "Is this information correct?\n\n"
+                        f"Set {player.name}'s Discord to {value}"
+                    )
+                    if await helpers.confirmation(ctx, msg):
+                        player.discord = value
+                        self.log.info(f"Admin set {name}'s Discord to {value}!")
+                        await ctx.send(f"Set {name}'s Discord to {value}!")
+                else:
+                    await ctx.send("That's not a valid attribute!")
+                    return
+            except IntegrityError:
+                session.rollback()
+                await ctx.send("That value raised an integrity error!")
+                return
+            else:
+                session.commit()
 
 
 def setup(bot: DonguriGaeruBot):
