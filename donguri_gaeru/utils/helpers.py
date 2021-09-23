@@ -14,9 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 
 import discord
+from database import Match
 from discord.ext import commands
 from utils import checks
 
@@ -38,13 +39,14 @@ async def confirmation(ctx: commands.Context, msg: discord.Message):
     return False
 
 
-class NameOrUser(commands.UserConverter):
-    async def convert(self, ctx, argument):
-        try:
-            return await super().convert(ctx, argument)
-        except commands.errors.UserNotFound:
-            return argument
-
-
 def time(time: datetime):
-    return time.astimezone(tz=timezone.utc).strftime("on %Y-%m-%d at %H:%M %Z")
+    return time.strftime("on %Y-%m-%d at %H:%M %Z")
+
+
+def format_match(match: Match):
+    return (
+        f"{'**DELETED** ' if not match.active else ''}`{match.id}`: "
+        f"({match.playerA.name}) {match.scoreA} - "
+        f"{match.scoreB} ({match.playerB.name}) "
+        f"{time(match.created)}\n"
+    )

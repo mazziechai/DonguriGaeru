@@ -15,6 +15,7 @@
 
 
 import logging
+from typing import Union
 
 import discord
 from bot import DonguriGaeruBot
@@ -42,7 +43,7 @@ class PlayerMatchCog(commands.Cog):
         ctx: commands.Context,
         score1: int,
         score2: int,
-        player2: helpers.NameOrUser,
+        player2: Union[discord.User, str],
     ):
         with Session() as session:
             stmt = select(Player)
@@ -105,15 +106,9 @@ class PlayerMatchCog(commands.Cog):
 
                 session.refresh(match)
 
-                match_string = (
-                    f"`{match.id}`: "
-                    f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n"
-                    f"{helpers.time(match.created)}"
-                )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
-                self.log.info(f"{usr} submitted match:\n{match_string}")
-                await ctx.send(f"Submitted match!\n\n{match_string}")
+                self.log.info(f"{usr} submitted match:\n{helpers.format_match(match)}")
+                await ctx.send(f"Submitted match!\n\n{helpers.format_match(match)}")
             else:
                 session.rollback()
 

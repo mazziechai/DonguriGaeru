@@ -88,15 +88,9 @@ class AdminCog(commands.Cog):
 
                 session.refresh(match)
 
-                match_string = (
-                    f"`{match.id}`: "
-                    f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n"
-                    f"{helpers.time(match.created)}"
-                )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
-                self.log.info(f"{usr} submitted match:\n{match_string}")
-                await ctx.send(f"Submitted match!\n\n{match_string}")
+                self.log.info(f"{usr} submitted match:\n{helpers.format_match(match)}")
+                await ctx.send(f"Submitted match!\n\n{helpers.format_match(match)}")
             else:
                 session.rollback()
 
@@ -116,10 +110,7 @@ class AdminCog(commands.Cog):
 
             msg: discord.Message = await ctx.send(
                 "Are you sure you want to delete this match?\n\n"
-                f"`{match_id}`: "
-                f"({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})\n"
-                f"{helpers.time(match.created)}"
+                + helpers.format_match(match)
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -152,7 +143,7 @@ class AdminCog(commands.Cog):
                 part2 = f"{score2} ~~{match.scoreB}~~"
 
             if score1 == match.scoreA and score2 == match.scoreB:
-                await ctx.send("The new scores are the same as the old scores.")
+                await ctx.send("The new scores are the same as the old scores!")
                 return
 
             msg: discord.Message = await ctx.send(
