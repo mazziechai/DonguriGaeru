@@ -45,7 +45,7 @@ def time(time: datetime):
 
 def format_match(match: Match):
     return (
-        f"{'**DELETED** ' if not match.active else ''}`{match.id}`: "
+        f"{'**INACTIVE** ' if not match.active else ''}`{match.id}`: "
         f"({match.playerA.name}) {match.scoreA} - "
         f"{match.scoreB} ({match.playerB.name}) "
         f"{time(match.created)}\n"
