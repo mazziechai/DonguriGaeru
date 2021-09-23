@@ -79,7 +79,9 @@ url = sql.format(
     username=DB_USERNAME, password=DB_PASSWORD, hostname=DB_HOSTNAME, db_name=DB_NAME
 )
 
-engine = create_engine(url, future=True, echo=DEBUG)
+engine = create_engine(
+    url, future=True, echo=DEBUG, connect_args={"options": "-c timezone=utc"}
+)
 Base.metadata.create_all(engine)
 
 Session.configure(bind=engine)
