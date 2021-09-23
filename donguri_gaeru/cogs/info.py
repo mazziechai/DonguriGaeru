@@ -49,13 +49,13 @@ class InfoCog(commands.Cog):
                 )
             else:
                 player: Player = (
-                    session.execute(stmt.where(Player.discord == user))
+                    session.execute(stmt.where(Player.discord == user.id))
                     .scalars()
                     .first()
                 )
 
             if player is None:
-                await ctx.send("That player isn't valid!")
+                await ctx.send("That player isn't registered!")
                 return
 
             if type is None:
@@ -67,12 +67,8 @@ class InfoCog(commands.Cog):
                 )
                 return
 
-            stmt = (
-                select(Match)
-                .where(
-                    or_(player.id == Match.playerA_id, player.id == Match.playerB_id)
-                )
-                .limit(5)
+            stmt = select(Match).where(
+                or_(player.id == Match.playerA_id, player.id == Match.playerB_id)
             )
 
             if type == "desc":
@@ -130,6 +126,59 @@ class InfoCog(commands.Cog):
             stmt = stmt.where(Match.created <= start_date + timedelta(days=1))
 
         with Session() as session:
+            await self.interactive_match_listing(ctx, session, stmt)
+
+    @match.command()
+    async def players(
+        self, ctx, player1: Union[discord.User, str], player2: Union[discord.User, str]
+    ):
+        with Session() as session:
+            stmt = select(Player)
+            if isinstance(player1, str):
+                playerA: Player = (
+                    session.execute(stmt.where(Player.name.ilike(player1)))
+                    .scalars()
+                    .first()
+                )
+            else:
+                playerA: Player = (
+                    session.execute(stmt.where(Player.discord == player1.id))
+                    .scalars()
+                    .first()
+                )
+
+            if isinstance(player2, str):
+                playerB: Player = (
+                    session.execute(stmt.where(Player.name.ilike(player2)))
+                    .scalars()
+                    .first()
+                )
+            else:
+                playerB: Player = (
+                    session.execute(stmt.where(Player.discord == player2.id))
+                    .scalars()
+                    .first()
+                )
+
+            if playerA is None:
+                await ctx.send("Player 1 is not registered!")
+                return
+
+            if playerB is None:
+                await ctx.send("Player 2 is not registered!")
+                return
+
+            stmt = (
+                select(Match)
+                .where(
+                    or_(playerA.id == Match.playerA_id, playerA.id == Match.playerA_id)
+                )
+                .where(
+                    or_(playerB.id == Match.playerB_id, playerB.id == Match.playerB_id)
+                )
+                .order_by(Match.created.desc())
+            )
+
             await self.interactive_match_listing(ctx, session, stmt)
 
     async def interactive_match_listing(
