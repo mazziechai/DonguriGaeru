@@ -30,11 +30,12 @@ def is_administrator():
     return commands.check(predicate)
 
 
-def is_confirmation(ctx: commands.Context):
+def is_confirmation(ctx: commands.Context, msg: discord.Message):
     def check(reaction: discord.Reaction, user: discord.User):
         if ctx.author == user:
-            return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
-
+            if reaction.message == msg:
+                return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
+            return False
         return False
 
     return check

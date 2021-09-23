@@ -27,10 +27,10 @@ async def confirmation(ctx: commands.Context, msg: discord.Message):
     await msg.add_reaction("❌")
 
     try:
-        event = await ctx.bot.wait_for(
-            "reaction_add", check=checks.is_confirmation(ctx), timeout=30.0
+        reaction, user = await ctx.bot.wait_for(
+            "reaction_add", check=checks.is_confirmation(ctx, msg), timeout=30.0
         )  # A tuple of a Reaction and a Member/User.
-        if str(event[0].emoji) == "✅":
+        if str(reaction.emoji) == "✅":
             return True
     except asyncio.TimeoutError:
         await ctx.send("There was no response.")
