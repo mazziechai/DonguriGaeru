@@ -36,6 +36,12 @@ class InfoCog(commands.Cog):
         self.log = logging.getLogger("donguri_gaeru")
 
     @commands.command()
+    async def recent(self, ctx: commands.Context):
+        stmt = select(Match).order_by(Match.created.desc())
+        with Session() as session:
+            await self.interactive_match_listing(ctx, session, stmt)
+
+    @commands.command()
     async def player(
         self, ctx: commands.Context, user: Union[discord.User, str], type: str = None
     ):
