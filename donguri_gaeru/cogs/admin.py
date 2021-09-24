@@ -28,6 +28,8 @@ from donguri_gaeru import Session
 
 
 class AdminCog(commands.Cog):
+    """Command cog for admin only commands."""
+
     def __init__(self, bot):
         self.bot = bot
         self.log = logging.getLogger("donguri_gaeru")
@@ -59,7 +61,7 @@ class AdminCog(commands.Cog):
                 .scalars()
                 .first()
             )
-
+            # Add new players
             if playerA is None:
                 playerA = Player(name=player1)
                 session.add(playerA)
@@ -74,7 +76,7 @@ class AdminCog(commands.Cog):
             )
 
             if await helpers.confirmation(ctx, msg):
-                session.commit()
+                session.commit()  # We have to commit to get the ids
 
                 session.refresh(playerA)
                 session.refresh(playerB)
@@ -133,7 +135,7 @@ class AdminCog(commands.Cog):
             if match is None:
                 await ctx.send(f"Match {match_id} doesn't exist!")
                 return
-
+            # Creating part of the string to use in the final message
             if score1 == match.scoreA:
                 part1 = f"{score1}"
             else:
@@ -153,7 +155,7 @@ class AdminCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {part1} - "
                 f"{part2} ({match.playerB.name})\n"
-                f"{helpers.time(match.created)}"
+                f"{helpers.format_time(match.created)}"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -179,6 +181,7 @@ class AdminCog(commands.Cog):
     ):
         with Session() as session:
             stmt = select(Player)
+            # If not a Discord user (mention or ID)
             if isinstance(user, str):
                 player: Player = (
                     session.execute(stmt.where(Player.name.ilike(user)))
@@ -197,27 +200,32 @@ class AdminCog(commands.Cog):
                 return
 
             name = player.name
-
+            # Changing the attribute now
             try:
                 if attribute == "name":
                     msg = await ctx.send(
                         "Is this information correct?\n\n"
                         f"Set {player.name}'s name to {value}"
                     )
+
                     if await helpers.confirmation(ctx, msg):
                         player.name = value
+
                         self.log.info(f"Admin set {name}'s name to {value}!")
                         await ctx.send(f"Set {name}'s name to {value}!")
                 elif attribute == "discord":
                     if not isinstance(value, int):
                         await ctx.send("The value must be a number!")
                         return
+
                     msg = await ctx.send(
                         "Is this information correct?\n\n"
                         f"Set {player.name}'s Discord to {value}"
                     )
+
                     if await helpers.confirmation(ctx, msg):
                         player.discord = value
+
                         self.log.info(f"Admin set {name}'s Discord to {value}!")
                         await ctx.send(f"Set {name}'s Discord to {value}!")
                 else:
@@ -228,6 +236,7 @@ class AdminCog(commands.Cog):
                 await ctx.send("That value raised an integrity error!")
                 return
             else:
+                # If everything was okay, commit the changes
                 session.commit()
 
 

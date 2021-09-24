@@ -23,6 +23,20 @@ from utils import checks
 
 
 async def confirmation(ctx: commands.Context, msg: discord.Message):
+    """Creates a confirmation reaction menu and returns the result.
+
+    Parameters
+    ----------
+    ctx : commands.Context
+        The context from the command.
+    msg : discord.Message
+        A message to put the reaction menu on.
+
+    Returns
+    -------
+    bool
+        True if the reaction is ✅.
+    """
     await msg.add_reaction("✅")
     await msg.add_reaction("❌")
 
@@ -39,14 +53,14 @@ async def confirmation(ctx: commands.Context, msg: discord.Message):
     return False
 
 
-def time(time: datetime):
+def format_time(time: datetime) -> str:
     return time.strftime("on %Y-%m-%d at %H:%M %Z")
 
 
-def format_match(match: Match):
+def format_match(match: Match) -> str:
     return (
         f"{'**INACTIVE** ' if not match.active else ''}`{match.id}`: "
         f"({match.playerA.name}) {match.scoreA} - "
         f"{match.scoreB} ({match.playerB.name}) "
-        f"{time(match.created)}\n"
+        f"{format_time(match.created)}\n"
     )

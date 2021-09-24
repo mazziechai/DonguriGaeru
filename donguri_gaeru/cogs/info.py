@@ -67,7 +67,7 @@ class InfoCog(commands.Cog):
             if type is None:
                 await ctx.send(
                     f"__{player.name}__\nMatches played: {len(player.matches)}\n"
-                    f"Registered {helpers.time(player.created)}\n"
+                    f"Registered {helpers.format_time(player.created)}\n"
                     f"Add `desc` to the end of this command to get {player.name}'s "
                     "most recent matches or `asc` to get matches from the beginning."
                 )
@@ -125,10 +125,11 @@ class InfoCog(commands.Cog):
                 return
             if start_date == end_date:
                 await ctx.send("Start and end date cannot be the same!")
-
+            # Adding to the statement the end date comparison
             stmt = stmt.where(Match.created <= end_date + timedelta(days=1))
 
         else:
+            # If there is no end date specified, the end date is the start + 1 day
             stmt = stmt.where(Match.created <= start_date + timedelta(days=1))
 
         with Session() as session:
@@ -140,6 +141,7 @@ class InfoCog(commands.Cog):
     ):
         with Session() as session:
             stmt = select(Player)
+            # Just getting the players.
             if isinstance(player1, str):
                 playerA: Player = (
                     session.execute(stmt.where(Player.name.ilike(player1)))
@@ -190,8 +192,23 @@ class InfoCog(commands.Cog):
     async def interactive_match_listing(
         self, ctx: commands.Context, session, stmt: Select
     ):
+        """Gets matches from the database and displays them in an
+        interactive message, where the user can go through the pages
+        by saying 'more' or exit by saying 'exit'.
+
+        Parameters
+        ----------
+        ctx : commands.Context
+            The context from the command.
+        session : Session
+            The SQLAlchemy session to use to get the matches.
+        stmt : Select
+            A select statement to get the appropriate matches.
+        """
         iterations = 0
         while True:
+            # We get the matches with the statement and apply a limit and an offset
+            # where the offset is the amount of iterations multiplied by five.
             matches: list[Match] = (
                 session.execute(
                     stmt.where(Match.active).limit(5).offset(iterations * 5)
@@ -203,6 +220,7 @@ class InfoCog(commands.Cog):
                 await ctx.send("No matches found!")
                 break
 
+            # Once we have the matches, create a string with the formatted matches
             text = ""
             for match in matches:
                 text += helpers.format_match(match)
@@ -231,6 +249,8 @@ class InfoCog(commands.Cog):
                     return
 
             else:
+                # If there isn't 5 matches, this means that there is no more matches,
+                # so we don't prompt the user anymore.
                 await ctx.send(
                     f"Showing {len(matches)} "
                     f"{'match' if len(matches) == 1 else 'matches'}.\n\n" + text
