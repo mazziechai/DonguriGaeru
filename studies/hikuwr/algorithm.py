@@ -4,9 +4,12 @@ from functools import partial
 
 Rating = namedtuple("Rating", "min med max")
 MatchTuple = namedtuple("MatchTuple", "playerA playerB points delta")
+RatingInfo = namedtuple("RatingInfo", "n maxdeltas avedeltas")
 
 
-def hikuwr_rating(matches, asof_date, iterations, convergence=False):
+def hikuwr_rating(matches, asof_date, threshold=1e-6, info=False):
+    # Convergence threshold is specified against the maximum rating delta.
+    # A tuple is returned with algorithm infodata if info=True.
 
     # Define subfunction for computing algorithm iterative convergence.
     def delta(ratingA, ratingB, scoreA, scoreB):
@@ -17,7 +20,8 @@ def hikuwr_rating(matches, asof_date, iterations, convergence=False):
 
     # Initialize algorithm data structures for efficiency.
     match_tuples = []
-    med_ratings, players = dict(), dict()
+    med_ratings = dict()
+    players = dict()
     for match in matches:
         years = (asof_date - match.created).days / 365.25
         tcoef = 1 / (1.5 * (years ** 2) + 1)  # magic function
@@ -39,11 +43,12 @@ def hikuwr_rating(matches, asof_date, iterations, convergence=False):
         players[match.playerB.name] = match.playerB
 
     # Compute the median ratings.
-    largest_deltas = []
-    average_deltas = []
-    for _ in range(iterations):
-        if convergence:
-            old_med_ratings = dict(med_ratings)
+    maxdeltas = []
+    avedeltas = []
+    n = 0
+    while True:
+        n += 1
+        old_ratings = dict(med_ratings)
 
         for match in match_tuples:
             ratingA = med_ratings[match.playerA]
@@ -53,15 +58,11 @@ def hikuwr_rating(matches, asof_date, iterations, convergence=False):
             med_ratings[match.playerA] = ratingA * alpha
             med_ratings[match.playerB] = ratingB / alpha
 
-        if convergence:
-            deltas = [
-                abs(med_ratings[player] - old_med_ratings[player]) for player in players
-            ]
-            largest_deltas.append(max(deltas))
-            average_deltas.append(sum(deltas) / len(deltas))
-
-    if convergence:
-        return largest_deltas, average_deltas
+        deltas = [abs(med_ratings[player] - old_ratings[player]) for player in players]
+        maxdeltas.append(max(deltas))
+        avedeltas.append(sum(deltas) / len(deltas))
+        if maxdeltas[-1] < threshold:
+            break
 
     # Compute the matchup strengths.
     matchups = defaultdict(int)
@@ -84,4 +85,7 @@ def hikuwr_rating(matches, asof_date, iterations, convergence=False):
 
         ratings[playerobject] = Rating(min=lbound, med=med_ratings[player], max=ubound)
 
-    return ratings
+    if info:
+        return ratings, RatingInfo(n, maxdeltas, avedeltas)
+    else:
+        return ratings
