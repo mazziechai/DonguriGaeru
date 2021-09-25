@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import time
+from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
@@ -38,6 +39,14 @@ parser.add_argument(
     const="1e-6",
     metavar="THRESHOLD",
     help="plot the algorithm convergence metrics",
+)
+parser.add_argument(
+    "-m",
+    "--matchups",
+    nargs="?",
+    const="250",
+    metavar="N",
+    help="list the most common player matchups (default 250)",
 )
 
 
@@ -224,6 +233,49 @@ def validate_convergence(threshold):
     plt.savefig(filepath)
 
 
+def most_common_matchups(n):
+    # See results/most_common_matchups.txt for a list.
+
+    # Open the hikuwr database and query all matches prior to February 2020.
+    fstring = "most_common_matchups (as of {}, number={:d})"
+    print(fstring.format(asof_date.strftime("%d/%m/%y"), n))
+
+    with dbsession(dbname="hikuwr") as session:
+        msg = TimedMsg()
+        matches = (
+            session.query(Match)
+            .filter(Match.created <= asof_date)
+            .order_by(asc(Match.created))
+            .all()
+        )
+        msg("Load {:d} matches from database.".format(len(matches)))
+
+        matchup_counter = Counter()
+        match_counter = Counter()
+        for match in matches:
+            matchup_counter[frozenset([match.playerA.name, match.playerB.name])] += 1
+            match_counter[match.playerA.name] += 1
+            match_counter[match.playerB.name] += 1
+
+    filename = "most_common_matchups.txt"
+    filepath = os.path.join(basepath, "results", filename)
+    fstring = "{:d} matches between:\t{} ({:d} matches)\t{} ({:d} matches)\n"
+    with open(filepath, "w", encoding="utf-8") as file:
+        for matchup, count in matchup_counter.most_common(n):
+            playerA, playerB = tuple(matchup)
+            file.write(
+                fstring.format(
+                    count,
+                    playerA,
+                    match_counter[playerA],
+                    playerB,
+                    match_counter[playerB],
+                )
+            )
+
+    msg("Most common matchups written to file.")
+
+
 def main():
     if not len(sys.argv) > 1:
         parser.print_help()
@@ -236,3 +288,6 @@ def main():
     if args.convergence is not None:
         print()
         validate_convergence(float(args.convergence))
+    if args.matchups is not None:
+        print()
+        most_common_matchups(int(args.matchups))
