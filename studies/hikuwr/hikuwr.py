@@ -112,6 +112,9 @@ def graph2database(dbname, session, graph):
         except AssertionError:
             failures.append(match)
 
+    if not failures:
+        return
+
     print("\nThe following match records were not added to the database:")
     fstring = (
         "<Match(playerA={playerA}:{scoreA}, "
@@ -139,17 +142,20 @@ def heroku(appname, graph):
 
 def extract(dbprefix, graph):
     puyolobby_matches = [
-        (match[:2])
+        match[:2]
         for match in graph.edges.data()
         if datetime(2019, 12, 1, tzinfo=timezone.utc)
         < match[2]["created"]
         < datetime(2020, 2, 1, tzinfo=timezone.utc)
     ]
-    graph = graph.edge_subgraph(puyolobby_matches)
+    puyolobby_players = set()
+    for match in puyolobby_matches:
+        puyolobby_players |= set(match)
+
+    graph = graph.subgraph(puyolobby_players)
 
     # Repeatedly partition the graph into communities until:
     # 1. The two largest partitions contain 1/2 of all matches in the queried dataset.
-    # 2. The two largest partitions have the same number of matches to within 5%.
     while True:
         part = community_louvain.best_partition(graph)
         ipart = defaultdict(list)
@@ -158,10 +164,7 @@ def extract(dbprefix, graph):
         bysize = sorted(ipart, key=lambda k: len(ipart[k]), reverse=True)
         bysize1 = len(graph.subgraph(ipart[bysize[0]]).edges)
         bysize2 = len(graph.subgraph(ipart[bysize[1]]).edges)
-        bysize_ave = (bysize1 + bysize2) / 2
-        condition1 = bysize1 + bysize2 > len(graph.edges) * 0.5
-        condition2 = abs(bysize1 - bysize_ave) / bysize_ave < 0.05
-        if condition1 and condition2:
+        if bysize1 + bysize2 > len(graph.edges) * 0.5:
             break
 
     # The smaller partitions will be added, in order of size, to the smaller of
@@ -224,6 +227,7 @@ def start():
         Base.metadata.create_all(engine)
         connection = engine.connect()
         session = Session(bind=connection)
+        print()
         graph2database(dbname, session, graph)
         session.close()
         connection.close()

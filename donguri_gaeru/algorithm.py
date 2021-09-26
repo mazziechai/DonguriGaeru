@@ -9,7 +9,11 @@ RatingInfo = namedtuple("RatingInfo", "n maxdeltas avedeltas")
 
 def hikuwr_rating(matches, asof_date, threshold=1e-6, nlimit=50000, info=False):
     # Convergence threshold is specified against the maximum rating delta.
+    # The algorithm will also stop if the iteration limit is reached.
     # A tuple is returned with algorithm infodata if info=True.
+    #
+    # Input matches are assumed to be sorted from earliest to latest,
+    # and all matches are assumed to have take place before the "as of" date.
 
     # Define subfunction for computing algorithm iterative convergence.
     def delta(ratingA, ratingB, scoreA, scoreB):

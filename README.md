@@ -25,6 +25,8 @@ PostgreSQL is used as the underlying database. Download it [here](https://www.po
 
 Running Hiku's original Java code requires compilation: `javac -encoding utf8 WorldRanking.java` using Java Runtime 52.0 (i.e. Java SE Development Kit 8u301, a.k.a. JDK 8).
 
+A variety of rating algorithm validation routines are provided with the `poetry run validate` command line script. Running the rating algorithm on the entire `hikuwr` database takes approximately 7 minutes to complete.
+
 ## Specifications and plans
 
 ### General stuff

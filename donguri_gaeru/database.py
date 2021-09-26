@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_method, hybrid_property
 from sqlalchemy.orm import relationship, validates
@@ -52,27 +52,6 @@ class Player(Base):
             "name={player.name}, "
             "discord={player.discord}, "
             "created={player.created})>".format(player=self)
-        )
-
-
-class Rating(Base):
-    __tablename__ = "ratings"
-    id = Column(Integer, primary_key=True)
-    player_id = Column(Integer, ForeignKey("players.id"), nullable=False)
-    asof_date = Column(DateTime(timezone=True), nullable=False)
-    rating = Column(Float, nullable=False)
-    rd = Column(Float, nullable=False)
-    vol = Column(Float, nullable=False)
-
-    player = relationship("Player", foreign_keys=player_id, backref="ratings")
-
-    def __repr__(self):
-        return (
-            "<Rating(player.name={rating.player.name}, "
-            "rating={rating.rating:0.1f}, "
-            "rd={rating.rd:0.1f}, "
-            "vol={rating.vol:0.2f}, "
-            "asof_date={rating.asof_date})>".format(rating=self)
         )
 
 
