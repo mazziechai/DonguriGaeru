@@ -7,7 +7,7 @@ MatchTuple = namedtuple("MatchTuple", "playerA playerB points delta")
 RatingInfo = namedtuple("RatingInfo", "n maxdeltas avedeltas")
 
 
-def hikuwr_rating(matches, asof_date, threshold=1e-6, info=False):
+def hikuwr_rating(matches, asof_date, threshold=1e-6, nlimit=50000, info=False):
     # Convergence threshold is specified against the maximum rating delta.
     # A tuple is returned with algorithm infodata if info=True.
 
@@ -61,7 +61,7 @@ def hikuwr_rating(matches, asof_date, threshold=1e-6, info=False):
         deltas = [abs(med_ratings[player] - old_ratings[player]) for player in players]
         maxdeltas.append(max(deltas))
         avedeltas.append(sum(deltas) / len(deltas))
-        if maxdeltas[-1] < threshold:
+        if maxdeltas[-1] < threshold or n == nlimit:
             break
 
     # Compute the matchup strengths.

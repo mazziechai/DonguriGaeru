@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 import jpype
+import numpy as np
 from matplotlib import pyplot as plt
 from sqlalchemy import asc, create_engine
 from sqlalchemy.orm import Session
@@ -19,7 +20,7 @@ from .algorithm import Rating, hikuwr_rating
 
 parser = argparse.ArgumentParser(
     description=(
-        "Run World Ranking rating algorithm validation routines as of 01/02/20.\n"
+        "Run World Ranking rating system validation routines as of 01/02/20.\n"
         "Default threshold for Python algorithm is 1e-6 (maximum rating delta)."
     ),
     formatter_class=argparse.RawTextHelpFormatter,
@@ -47,6 +48,13 @@ parser.add_argument(
     const="250",
     metavar="N",
     help="list the most common player matchups (default 250)",
+)
+parser.add_argument(
+    "-p",
+    "--predicts",
+    nargs=3,
+    metavar=("PLAYERA", "PLAYERB", "THRESHOLD"),
+    help="compute algorithm predicts for a specific matchup",
 )
 
 
@@ -201,7 +209,7 @@ def load_java_results(session, matches, asof_date, iterations):
 
 
 def validate_convergence(threshold):
-    # This routine will plot the algorithm converge metric over iterations.
+    # This routine will plot the algorithm convergence metric over iterations.
     # See results/validate_convergence.png for a plot.
 
     # Open the hikuwr database and query all matches prior to February 2020.
@@ -233,11 +241,11 @@ def validate_convergence(threshold):
     plt.savefig(filepath)
 
 
-def most_common_matchups(n):
-    # See results/most_common_matchups.txt for a list.
+def matchups(n):
+    # See results/matchups.txt for a list.
 
     # Open the hikuwr database and query all matches prior to February 2020.
-    fstring = "most_common_matchups (as of {}, number={:d})"
+    fstring = "matchups (as of {}, number={:d})"
     print(fstring.format(asof_date.strftime("%d/%m/%y"), n))
 
     with dbsession(dbname="hikuwr") as session:
@@ -257,8 +265,7 @@ def most_common_matchups(n):
             match_counter[match.playerA.name] += 1
             match_counter[match.playerB.name] += 1
 
-    filename = "most_common_matchups.txt"
-    filepath = os.path.join(basepath, "results", filename)
+    filepath = os.path.join(basepath, "results", "matchups.txt")
     fstring = "{:d} matches between:\t{} ({:d} matches)\t{} ({:d} matches)\n"
     with open(filepath, "w", encoding="utf-8") as file:
         for matchup, count in matchup_counter.most_common(n):
@@ -276,6 +283,120 @@ def most_common_matchups(n):
     msg("Most common matchups written to file.")
 
 
+def validate_predicts(playerA, playerB, threshold):
+    # Remove from the matchup list any matches between the two players.
+    # At the time of each match, compute player ratings and compare the
+    # predicted score range against the actual result.
+    # See results/validate_predicts/playerA_vs_playerB.png for a plot.
+
+    # Open the hikuwr database and query all matches prior to February 2020.
+    fstring = "validate_predicts (as of {}, {} vs {})"
+    print(fstring.format(asof_date.strftime("%d/%m/%y"), playerA, playerB))
+
+    with dbsession(dbname="hikuwr") as session:
+        msg = TimedMsg()
+        matches = (
+            session.query(Match)
+            .filter(Match.created <= asof_date)
+            .order_by(asc(Match.created))
+            .all()
+        )
+        matchfilt = lambda m: {playerA, playerB} != {  # noqa: E731
+            m.playerA.name,
+            m.playerB.name,
+        }
+        base = list(filter(matchfilt, matches))
+        predict = list(filter(lambda m: not matchfilt(m), matches))
+        fstring = "Load {:d} matches from database, {:d} matches to predict."
+        msg(fstring.format(len(base), len(predict)))
+
+        ratings = []
+        for i, match in enumerate(predict):
+            datefilt = lambda m: m.created <= match.created  # noqa: E731
+            matches_to_rate = list(filter(datefilt, base))
+            rating = hikuwr_rating(matches_to_rate, match.created, threshold)
+            ratings.append((match, rating))
+            msg("Ratings computed for match {:d} of {:d}.".format(i + 1, len(predict)))
+
+        dates = []
+        ratingA = []
+        ratingB = []
+        ratingAerr = []
+        ratingBerr = []
+        score_predict = []
+        score_predict_err = []
+        score_actual = []
+        for match, rating in ratings:
+            dates.append(match.created)
+            if match.playerA.name == playerA:
+                ratingAbnd = rating[match.playerA]
+                ratingBbnd = rating[match.playerB]
+                scoreA = match.scoreA
+            else:
+                ratingAbnd = rating[match.playerB]
+                ratingBbnd = rating[match.playerA]
+                scoreA = match.scoreB
+
+            # Get the player ratings over time.
+            ratingA.append(ratingAbnd.med)
+            ratingAerr.append(
+                [ratingAbnd.med - ratingAbnd.min, ratingAbnd.max - ratingAbnd.med]
+            )
+            ratingB.append(ratingBbnd.med)
+            ratingBerr.append(
+                [ratingBbnd.med - ratingBbnd.min, ratingBbnd.max - ratingBbnd.med]
+            )
+
+            # Predict the matchup results over time.
+            score_actual.append(scoreA / match.games)
+            predict = 1 / (ratingBbnd.med / ratingAbnd.med + 1)
+            lo_predict = 1 / (ratingBbnd.max / ratingAbnd.min + 1)
+            hi_predict = 1 / (ratingBbnd.min / ratingAbnd.max + 1)
+            score_predict.append(predict)
+            score_predict_err.append([predict - lo_predict, hi_predict - predict])
+
+    fig, axs = plt.subplots(2, 1, figsize=(6, 8), sharex=True)
+
+    axs[0].errorbar(
+        dates,
+        ratingA,
+        yerr=np.transpose(ratingAerr),
+        fmt=".",
+        capsize=2,
+        label="PlayerA: " + playerA,
+    )
+    axs[0].errorbar(
+        dates,
+        ratingB,
+        yerr=np.transpose(ratingBerr),
+        fmt=".",
+        capsize=2,
+        label="PlayerB: " + playerB,
+    )
+    axs[0].grid(which="both")
+    axs[0].legend()
+    axs[0].set_ylabel("Player Ratings")
+
+    axs[1].errorbar(
+        dates,
+        score_predict,
+        yerr=np.transpose(score_predict_err),
+        fmt=".",
+        capsize=2,
+        label="predict",
+    )
+    axs[1].plot(dates, score_actual, "rx", label="actual")
+    axs[1].grid(which="both")
+    axs[1].legend()
+    axs[1].set_ylabel("PlayerA Fractional Win Total")
+
+    [tick.set_rotation(30) for tick in axs[1].get_xticklabels()]
+
+    filename = "{}_vs_{}.png".format(playerA, playerB)
+    filepath = os.path.join(basepath, "results", "validate_predicts", filename)
+    plt.savefig(filepath)
+
+
 def main():
     if not len(sys.argv) > 1:
         parser.print_help()
@@ -290,4 +411,7 @@ def main():
         validate_convergence(float(args.convergence))
     if args.matchups is not None:
         print()
-        most_common_matchups(int(args.matchups))
+        matchups(int(args.matchups))
+    if args.predicts is not None:
+        print()
+        validate_predicts(args.predicts[0], args.predicts[1], float(args.predicts[2]))
