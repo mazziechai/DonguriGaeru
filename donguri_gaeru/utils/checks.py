@@ -30,11 +30,28 @@ def is_administrator():
     return commands.check(predicate)
 
 
-def is_confirmation(ctx: commands.Context):
+def is_confirmation(ctx: commands.Context, msg: discord.Message):
+    """Checks if the reaction being added is on the passed message and is
+    one of the correct emojis.
+
+    Parameters
+    ----------
+    ctx: commands.Context
+        The context from the command.
+    msg: discord.Message
+        The message to check.
+
+    Returns
+    ----------
+    Callable[[discord.Reaction, discord.User], bool]
+        A function that returns true if the reaction was a confirmation.
+    """
+
     def check(reaction: discord.Reaction, user: discord.User):
         if ctx.author == user:
-            return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
-
+            if reaction.message == msg:
+                return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
+            return False
         return False
 
     return check

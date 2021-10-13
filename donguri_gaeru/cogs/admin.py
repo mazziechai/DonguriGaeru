@@ -14,112 +14,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Union
 
 import discord
 from bot import DonguriGaeruBot
 from database import Match, Player
 from discord.ext import commands
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from utils import checks, helpers
 
 from donguri_gaeru import Session
 
 
-class MatchCog(commands.Cog):
-    """
-    Commands for submitting, fixing, and deleting matches from the database.
-    """
+class AdminCog(commands.Cog):
+    """Command cog for admin only commands."""
 
-    def __init__(self, bot: DonguriGaeruBot):
+    def __init__(self, bot):
         self.bot = bot
         self.log = logging.getLogger("donguri_gaeru")
-
-    @commands.command()
-    async def submit(
-        self,
-        ctx: commands.Context,
-        score1: int,
-        score2: int,
-        player2: helpers.NameOrUser,
-    ):
-        with Session() as session:
-            stmt = select(Player)
-            playerA = (
-                session.execute(stmt.where(Player.discord == ctx.author.id))
-                .scalars()
-                .first()
-            )
-
-            if playerA is None:
-                await ctx.send(
-                    "You're not registered! "
-                    f"Run `{ctx.prefix}register <name>` to register."
-                )
-                return
-
-            if isinstance(player2, str):
-                playerB: Player = (
-                    session.execute(stmt.where(Player.name.ilike(player2)))
-                    .scalars()
-                    .first()
-                )
-
-                if playerB is None:
-                    playerB = Player(name=player2)
-                    session.add(playerB)
-
-            else:
-                playerB: Player = (
-                    session.execute(stmt.where(Player.discord == player2.id))
-                    .scalars()
-                    .first()
-                )
-
-                if playerB is None:
-                    await ctx.send(
-                        "Player 2 isn't registered! "
-                        f"Run `{ctx.prefix}register <name>` to register."
-                    )
-                    return
-
-            msg: discord.Message = await ctx.send(
-                "Is this information correct?\n\n"
-                f"({playerA.name}) {score1} - {score2} ({playerB.name})"
-            )
-
-            if await helpers.confirmation(ctx, msg):
-                session.commit()
-
-                session.refresh(playerB)
-
-                match = Match(
-                    playerA_id=playerA.id,
-                    playerB_id=playerB.id,
-                    scoreA=score1,
-                    scoreB=score2,
-                )
-                session.add(match)
-                session.commit()
-
-                session.refresh(match)
-
-                match_string = (
-                    f"`{match.id}`: "
-                    f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n"
-                    f"at {match.created}"
-                )
-                usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
-                self.log.info(f"{usr} submitted match:\n{match_string}")
-                await ctx.send(f"Submitted match!\n\n{match_string}")
-            else:
-                session.rollback()
 
     @commands.group()
     @checks.is_administrator()
     async def admin(self, ctx):
-        if ctx.invoked_subcommand is None:
-            pass
+        pass
 
     @admin.command(name="submit")
     async def adminsubmit(
@@ -143,7 +61,7 @@ class MatchCog(commands.Cog):
                 .scalars()
                 .first()
             )
-
+            # Add new players
             if playerA is None:
                 playerA = Player(name=player1)
                 session.add(playerA)
@@ -158,7 +76,7 @@ class MatchCog(commands.Cog):
             )
 
             if await helpers.confirmation(ctx, msg):
-                session.commit()
+                session.commit()  # We have to commit to get the ids
 
                 session.refresh(playerA)
                 session.refresh(playerB)
@@ -174,15 +92,9 @@ class MatchCog(commands.Cog):
 
                 session.refresh(match)
 
-                match_string = (
-                    f"`{match.id}`: "
-                    f"({match.playerA.name}) {match.scoreA} - "
-                    f"{match.scoreB} ({match.playerB.name})\n"
-                    f"at {match.created}"
-                )
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
-                self.log.info(f"{usr} submitted match:\n{match_string}")
-                await ctx.send(f"Submitted match!\n\n{match_string}")
+                self.log.info(f"{usr} submitted match:\n{helpers.format_match(match)}")
+                await ctx.send(f"Submitted match!\n\n{helpers.format_match(match)}")
             else:
                 session.rollback()
 
@@ -202,10 +114,7 @@ class MatchCog(commands.Cog):
 
             msg: discord.Message = await ctx.send(
                 "Are you sure you want to delete this match?\n\n"
-                f"`{match_id}`: "
-                f"({match.playerA.name}) {match.scoreA} - "
-                f"{match.scoreB} ({match.playerB.name})\n"
-                f"at {match.created}"
+                + helpers.format_match(match)
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -226,7 +135,7 @@ class MatchCog(commands.Cog):
             if match is None:
                 await ctx.send(f"Match {match_id} doesn't exist!")
                 return
-
+            # Creating part of the string to use in the final message
             if score1 == match.scoreA:
                 part1 = f"{score1}"
             else:
@@ -238,7 +147,7 @@ class MatchCog(commands.Cog):
                 part2 = f"{score2} ~~{match.scoreB}~~"
 
             if score1 == match.scoreA and score2 == match.scoreB:
-                await ctx.send("The new scores are the same as the old scores.")
+                await ctx.send("The new scores are the same as the old scores!")
                 return
 
             msg: discord.Message = await ctx.send(
@@ -246,7 +155,7 @@ class MatchCog(commands.Cog):
                 f"`{match_id}`: "
                 f"({match.playerA.name}) {part1} - "
                 f"{part2} ({match.playerB.name})\n"
-                f"at {match.created}"
+                f"{helpers.format_time(match.created)}"
             )
 
             if await helpers.confirmation(ctx, msg):
@@ -257,11 +166,79 @@ class MatchCog(commands.Cog):
                 usr = f"{ctx.author.id} ({ctx.author.name}#{ctx.author.discriminator})"
                 self.log.info(
                     f"Match {match_id} has been fixed by {usr}!\n"
-                    f"New scores: ({match.playerA.name}) {part1} - "
-                    f"{part2} ({match.playerB.name})"
+                    f"New scores: ({match.playerA.name}) {score1} - "
+                    f"{score2} ({match.playerB.name})"
                 )
                 await ctx.send(f"Match `{match_id}` has been fixed!")
 
+    @admin.command()
+    async def player(
+        self,
+        ctx: commands.Context,
+        user: Union[discord.User, str],
+        attribute: str,
+        value: Union[int, str],
+    ):
+        with Session() as session:
+            stmt = select(Player)
+            # If not a Discord user (mention or ID)
+            if isinstance(user, str):
+                player: Player = (
+                    session.execute(stmt.where(Player.name.ilike(user)))
+                    .scalars()
+                    .first()
+                )
+            else:
+                player: Player = (
+                    session.execute(stmt.where(Player.discord == user.id))
+                    .scalars()
+                    .first()
+                )
 
-def setup(bot):
-    bot.add_cog(MatchCog(bot))
+            if player is None:
+                await ctx.send("That player isn't registered!")
+                return
+
+            name = player.name
+            # Changing the attribute now
+            try:
+                if attribute == "name":
+                    msg = await ctx.send(
+                        "Is this information correct?\n\n"
+                        f"Set {player.name}'s name to {value}"
+                    )
+
+                    if await helpers.confirmation(ctx, msg):
+                        player.name = value
+
+                        self.log.info(f"Admin set {name}'s name to {value}!")
+                        await ctx.send(f"Set {name}'s name to {value}!")
+                elif attribute == "discord":
+                    if not isinstance(value, int):
+                        await ctx.send("The value must be a number!")
+                        return
+
+                    msg = await ctx.send(
+                        "Is this information correct?\n\n"
+                        f"Set {player.name}'s Discord to {value}"
+                    )
+
+                    if await helpers.confirmation(ctx, msg):
+                        player.discord = value
+
+                        self.log.info(f"Admin set {name}'s Discord to {value}!")
+                        await ctx.send(f"Set {name}'s Discord to {value}!")
+                else:
+                    await ctx.send("That's not a valid attribute!")
+                    return
+            except IntegrityError:
+                session.rollback()
+                await ctx.send("That value raised an integrity error!")
+                return
+            else:
+                # If everything was okay, commit the changes
+                session.commit()
+
+
+def setup(bot: DonguriGaeruBot):
+    bot.add_cog(AdminCog(bot))

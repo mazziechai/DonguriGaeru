@@ -14,21 +14,37 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from datetime import datetime
 
 import discord
+from database import Match
 from discord.ext import commands
 from utils import checks
 
 
 async def confirmation(ctx: commands.Context, msg: discord.Message):
+    """Creates a confirmation reaction menu and returns the result.
+
+    Parameters
+    ----------
+    ctx : commands.Context
+        The context from the command.
+    msg : discord.Message
+        A message to put the reaction menu on.
+
+    Returns
+    -------
+    bool
+        True if the reaction is ✅.
+    """
     await msg.add_reaction("✅")
     await msg.add_reaction("❌")
 
     try:
-        event = await ctx.bot.wait_for(
-            "reaction_add", check=checks.is_confirmation(ctx), timeout=30.0
+        reaction, user = await ctx.bot.wait_for(
+            "reaction_add", check=checks.is_confirmation(ctx, msg), timeout=30.0
         )  # A tuple of a Reaction and a Member/User.
-        if str(event[0].emoji) == "✅":
+        if str(reaction.emoji) == "✅":
             return True
     except asyncio.TimeoutError:
         await ctx.send("There was no response.")
@@ -37,9 +53,14 @@ async def confirmation(ctx: commands.Context, msg: discord.Message):
     return False
 
 
-class NameOrUser(commands.UserConverter):
-    async def convert(self, ctx, argument):
-        try:
-            return await super().convert(ctx, argument)
-        except commands.errors.UserNotFound:
-            return argument
+def format_time(time: datetime) -> str:
+    return time.strftime("on %Y-%m-%d at %H:%M %Z")
+
+
+def format_match(match: Match) -> str:
+    return (
+        f"{'**INACTIVE** ' if not match.active else ''}`{match.id}`: "
+        f"({match.playerA.name}) {match.scoreA} - "
+        f"{match.scoreB} ({match.playerB.name}) "
+        f"{format_time(match.created)}\n"
+    )

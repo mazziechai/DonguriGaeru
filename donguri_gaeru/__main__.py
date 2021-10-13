@@ -26,6 +26,7 @@ from config import (
     DB_NAME,
     DB_PASSWORD,
     DB_USERNAME,
+    DEBUG,
     LOG_LEVEL,
     PREFIX,
     TOKEN,
@@ -58,6 +59,10 @@ stream_handler.setFormatter(fmt)
 root_logger.addHandler(file_handler)
 root_logger.addHandler(stream_handler)
 
+engine_logger = logging.getLogger("sqlalchemy.engine.Engine")
+engine_logger.propagate = False
+engine_logger.addHandler(stream_handler)
+
 # Setting up the database
 log = logging.getLogger("donguri_gaeru")
 
@@ -74,7 +79,9 @@ url = sql.format(
     username=DB_USERNAME, password=DB_PASSWORD, hostname=DB_HOSTNAME, db_name=DB_NAME
 )
 
-engine = create_engine(url, future=True)
+engine = create_engine(
+    url, future=True, echo=DEBUG, connect_args={"options": "-c timezone=utc"}
+)
 Base.metadata.create_all(engine)
 
 Session.configure(bind=engine)
