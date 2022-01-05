@@ -18,7 +18,6 @@ import re
 import traceback
 from pathlib import Path
 
-import discord
 from discord.ext import commands
 from discord.utils import escape_markdown
 
@@ -47,22 +46,19 @@ class DonguriGaeruBot(commands.Bot):
             await ctx.send("This command is disabled.")
 
         elif isinstance(error, commands.CommandInvokeError):
-            original = error.original
+            self.log.exception(
+                f"""Exception from {ctx.command.qualified_name}!\n
+                {"".join(traceback.format_exception(
+                    type(error), error, error.__traceback__
+                ))}"""
+            )
 
-            if not isinstance(original, discord.HTTPException):
-                self.log.exception(
-                    f"""Exception from {ctx.command.qualified_name}!\n
-                    {"".join(traceback.format_exception(
-                        type(error), error, error.__traceback__
-                    ))}"""
-                )
-
-                await ctx.send(
-                    f"""Exception from {ctx.command.qualified_name}!\n
-                    ```{escape_markdown("".join(
-                            traceback.format_exception(
-                                type(error), error, error.__traceback__
-                            )
+            await ctx.send(
+                f"""Exception from {ctx.command.qualified_name}!\n
+                ```{escape_markdown("".join(
+                        traceback.format_exception(
+                            type(error), error, error.__traceback__
                         )
-                    )}```"""
-                )
+                    )
+                )}```"""
+            )
