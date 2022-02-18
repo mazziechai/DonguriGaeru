@@ -44,13 +44,13 @@ class AdminExtension : Extension() {
             name = "admin"
             description = "Administrator commands."
 
-            check {
-                hasPermission(Permission.Administrator)
-            }
-
             publicSubCommand(::AdminSubmitCommandArguments) {
                 name = "submit"
                 description = "Submits a match between two players."
+
+                check {
+                    hasPermission(Permission.Administrator)
+                }
 
                 action {
                     // Get player 1 and player 2 from the database
@@ -75,6 +75,65 @@ class AdminExtension : Extension() {
                     }
                 }
             }
+
+            publicSubCommand(::EnableDisableMatchCommandArguments) {
+                name = "enable"
+                description = "Enable a match if it was disabled."
+
+                check {
+                    hasPermission(Permission.Administrator)
+                }
+
+                action {
+                    val match = matchCollection.get(arguments.id.toInt(16))
+
+                    if (match == null) {
+                        respond {
+                            content = "**Error:** That match could not be found."
+                        }
+                    } else if (match.active) {
+                        respond {
+                            content = "**Error:** That match is already enabled."
+                        }
+                    } else {
+                        match.active = true
+                        matchCollection.set(match)
+                        respond {
+                            content = "Enabled match `${match._id.toString(16)}`"
+                        }
+                    }
+                }
+            }
+
+            publicSubCommand(::EnableDisableMatchCommandArguments) {
+                name = "disable"
+                description = "Disable a match, effectively deleting it."
+
+                check {
+                    hasPermission(Permission.Administrator)
+                }
+
+                action {
+                    val match = matchCollection.get(arguments.id.toInt(16))
+
+                    if (match == null) {
+                        respond {
+                            content = "**Error:** That match could not be found."
+                        }
+                    } else if (!match.active) {
+                        respond {
+                            content = "**Error:** That match is already disabled."
+                        }
+                    } else {
+                        match.active = false
+                        matchCollection.set(match)
+                        respond {
+                            content = "Disabled match `${match._id.toString(16)}`"
+                        }
+                    }
+                }
+            }
+
         }
     }
 
@@ -94,6 +153,19 @@ class AdminExtension : Extension() {
         val player2 by string {
             name = "player2"
             description = "Player 2's name."
+        }
+    }
+
+    inner class EnableDisableMatchCommandArguments : Arguments() {
+        val id by string {
+            name = "id"
+            description = "The ID of the match."
+
+            validate {
+                failIf("That is not a valid ID.") {
+                    value.toIntOrNull(16) == null
+                }
+            }
         }
     }
 }

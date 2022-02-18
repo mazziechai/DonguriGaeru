@@ -58,7 +58,8 @@ class InfoExtension : Extension() {
                         respond {
                             content = "Match `${match._id.toString(16)}`\n" +
                                     "**${player1?.name}** ${match.score1} - ${match.score2} **${player2?.name}**\n" +
-                                    "at ${match.created.toMessageFormat(DiscordTimestampStyle.ShortDateTime)}"
+                                    "at ${match.created.toMessageFormat(DiscordTimestampStyle.ShortDateTime)}\n" +
+                                    "Active: ${match.active}"
                         }
                     } else {
                         respond {
