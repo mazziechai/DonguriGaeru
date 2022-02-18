@@ -21,9 +21,13 @@ package cafe.ferret.dongurigaeru
 import cafe.ferret.dongurigaeru.database.Database
 import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
+import cafe.ferret.dongurigaeru.database.entities.Match
+import cafe.ferret.dongurigaeru.database.entities.Player
 import com.kotlindiscord.kord.extensions.builders.ExtensibleBotBuilder
 import com.kotlindiscord.kord.extensions.utils.env
 import com.kotlindiscord.kord.extensions.utils.loadModule
+import dev.kord.common.DiscordTimestampStyle
+import dev.kord.common.toMessageFormat
 import org.koin.dsl.bind
 
 suspend fun ExtensibleBotBuilder.database() {
@@ -42,4 +46,11 @@ suspend fun ExtensibleBotBuilder.database() {
             }
         }
     }
+}
+
+fun formatMatch(match: Match, player1: Player, player2: Player): String {
+    return "`${match._id.toString(16)}`\n" +
+            "**${player1.name}** ${match.score1} - ${match.score2} **${player2.name}**\n" +
+            "at ${match.created.toMessageFormat(DiscordTimestampStyle.ShortDateTime)}\n" +
+            "Active: ${match.active}"
 }

@@ -20,6 +20,7 @@ package cafe.ferret.dongurigaeru.extensions
 
 import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
+import cafe.ferret.dongurigaeru.formatMatch
 import com.kotlindiscord.kord.extensions.checks.hasPermission
 import com.kotlindiscord.kord.extensions.commands.Arguments
 import com.kotlindiscord.kord.extensions.commands.application.slash.publicSubCommand
@@ -28,9 +29,7 @@ import com.kotlindiscord.kord.extensions.commands.converters.impl.string
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
-import dev.kord.common.DiscordTimestampStyle
 import dev.kord.common.entity.Permission
-import dev.kord.common.toMessageFormat
 import org.koin.core.component.inject
 
 class AdminExtension : Extension() {
@@ -67,11 +66,10 @@ class AdminExtension : Extension() {
 
                     val match = matchCollection.new(player1, arguments.score1, arguments.score2, player2)
 
-                    respond {
-                        content = "Reported match `${match._id.toString(16)}`\n" +
-                                "**${player1.name}** ${arguments.score1} - ${arguments.score2} **${player2.name}**\n" +
-                                "at ${match.created.toMessageFormat(DiscordTimestampStyle.ShortDateTime)}"
+                    val msg = "Reported match ${formatMatch(match, player1, player2)}"
 
+                    respond {
+                        content = msg
                     }
                 }
             }
@@ -98,6 +96,7 @@ class AdminExtension : Extension() {
                     } else {
                         match.active = true
                         matchCollection.set(match)
+
                         respond {
                             content = "Enabled match `${match._id.toString(16)}`"
                         }

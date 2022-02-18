@@ -20,14 +20,13 @@ package cafe.ferret.dongurigaeru.extensions
 
 import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
+import cafe.ferret.dongurigaeru.formatMatch
 import com.kotlindiscord.kord.extensions.commands.Arguments
 import com.kotlindiscord.kord.extensions.commands.application.slash.publicSubCommand
 import com.kotlindiscord.kord.extensions.commands.converters.impl.string
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
-import dev.kord.common.DiscordTimestampStyle
-import dev.kord.common.toMessageFormat
 import org.koin.core.component.inject
 
 class InfoExtension : Extension() {
@@ -56,10 +55,7 @@ class InfoExtension : Extension() {
                         val player2 = playerCollection.get(match.player2)
 
                         respond {
-                            content = "Match `${match._id.toString(16)}`\n" +
-                                    "**${player1?.name}** ${match.score1} - ${match.score2} **${player2?.name}**\n" +
-                                    "at ${match.created.toMessageFormat(DiscordTimestampStyle.ShortDateTime)}\n" +
-                                    "Active: ${match.active}"
+                            content = "Match ${formatMatch(match, player1!!, player2!!)}"
                         }
                     } else {
                         respond {
