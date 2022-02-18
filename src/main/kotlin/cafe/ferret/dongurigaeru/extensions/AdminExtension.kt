@@ -20,6 +20,7 @@ package cafe.ferret.dongurigaeru.extensions
 
 import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
+import com.kotlindiscord.kord.extensions.checks.hasPermission
 import com.kotlindiscord.kord.extensions.commands.Arguments
 import com.kotlindiscord.kord.extensions.commands.application.slash.publicSubCommand
 import com.kotlindiscord.kord.extensions.commands.converters.impl.int
@@ -28,6 +29,7 @@ import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
 import com.kotlindiscord.kord.extensions.types.respond
 import dev.kord.common.DiscordTimestampStyle
+import dev.kord.common.entity.Permission
 import dev.kord.common.toMessageFormat
 import org.koin.core.component.inject
 
@@ -41,6 +43,10 @@ class AdminExtension : Extension() {
         publicSlashCommand {
             name = "admin"
             description = "Administrator commands."
+
+            check {
+                hasPermission(Permission.Administrator)
+            }
 
             publicSubCommand(::AdminSubmitCommandArguments) {
                 name = "submit"
