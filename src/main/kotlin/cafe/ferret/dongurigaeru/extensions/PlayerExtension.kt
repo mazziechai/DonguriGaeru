@@ -18,9 +18,12 @@
 
 package cafe.ferret.dongurigaeru.extensions
 
+import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
 import cafe.ferret.dongurigaeru.database.entities.Player
+import cafe.ferret.dongurigaeru.formatMatch
 import com.kotlindiscord.kord.extensions.commands.Arguments
+import com.kotlindiscord.kord.extensions.commands.converters.impl.int
 import com.kotlindiscord.kord.extensions.commands.converters.impl.string
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.publicSlashCommand
@@ -33,6 +36,7 @@ class PlayerExtension : Extension() {
     override val name = "player"
 
     private val playerCollection: PlayerCollection by inject()
+    private val matchCollection: MatchCollection by inject()
 
     override suspend fun setup() {
         publicSlashCommand(::PlayerRegistrationCommandArguments) {
@@ -82,12 +86,54 @@ class PlayerExtension : Extension() {
                 }
             }
         }
+        publicSlashCommand(::MatchSubmitCommandArguments) {
+            name = "submit"
+            description = "Submit a match into the Donguri Gaeru system."
+
+            action {
+                val player1 = playerCollection.getByDiscord(user.id)
+                if (player1 == null) {
+                    respond {
+                        content = "**Error:** You are not registered. Try using /register first"
+                    }
+                    return@action
+                }
+
+                var player2 = playerCollection.getByName(arguments.player2)
+                if (player2 == null) {
+                    player2 = playerCollection.new(arguments.player2, null)
+                }
+
+                val match = matchCollection.new(player1, arguments.score1, arguments.score2, player2)
+
+                val msg = "Reported match ${formatMatch(match, player1, player2)}"
+
+                respond {
+                    content = msg
+                }
+            }
+        }
     }
 
     inner class PlayerRegistrationCommandArguments : Arguments() {
         val name by string {
             name = "name"
             description = "The name you wish to register under. This can be changed in the future."
+        }
+    }
+
+    inner class MatchSubmitCommandArguments : Arguments() {
+        val score1 by int {
+            name = "yourScore"
+            description = "Your score that you got in the match."
+        }
+        val score2 by int {
+            name = "theirScore"
+            description = "Their score that they got in the match."
+        }
+        val player2 by string {
+            name = "player2"
+            description = "The other player in the match."
         }
     }
 }

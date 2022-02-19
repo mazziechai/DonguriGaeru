@@ -27,6 +27,7 @@ import org.bson.conversions.Bson
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.litote.kmongo.eq
+import org.litote.kmongo.regex
 import kotlin.random.Random
 
 class PlayerCollection : KoinComponent {
@@ -50,7 +51,7 @@ class PlayerCollection : KoinComponent {
     suspend fun get(id: Int) = col.findOne(Player::_id eq id)
     suspend fun set(player: Player) = col.save(player)
 
-    suspend fun getByName(name: String) = col.findOne(Player::name eq name)
+    suspend fun getByName(name: String) = col.findOne(Player::name regex "(?i)$name")
 
     suspend fun getByDiscord(discord: Snowflake) = col.findOne(Player::discord eq discord)
 
