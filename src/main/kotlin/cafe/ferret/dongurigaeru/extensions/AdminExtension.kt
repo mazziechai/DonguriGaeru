@@ -133,6 +133,33 @@ class AdminExtension : Extension() {
                 }
             }
 
+            publicSubCommand(::FixMatchCommandArguments) {
+                name = "fix"
+                description = "Fix a match's scores."
+
+                action {
+                    val match = matchCollection.get(arguments.id.toInt(16))
+
+                    if (match != null) {
+                        match.score1 = arguments.score1
+                        match.score2 = arguments.score2
+
+                        // This is always not null
+                        val player1 = playerCollection.get(match.player1)
+                        val player2 = playerCollection.get(match.player2)
+
+                        matchCollection.set(match)
+
+                        respond {
+                            content = "Fixed match ${formatMatch(match, player1!!, player2!!)}"
+                        }
+                    } else {
+                        respond {
+                            content = "**Error:** Could not find that match"
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -165,6 +192,27 @@ class AdminExtension : Extension() {
                     value.toIntOrNull(16) == null
                 }
             }
+        }
+    }
+
+    inner class FixMatchCommandArguments : Arguments() {
+        val id by string {
+            name = "id"
+            description = "The ID of the match."
+
+            validate {
+                failIf("That is not a valid ID.") {
+                    value.toIntOrNull(16) == null
+                }
+            }
+        }
+        val score1 by int {
+            name = "score1"
+            description = "Player 1's score."
+        }
+        val score2 by int {
+            name = "score2"
+            description = "Player 2's score."
         }
     }
 }

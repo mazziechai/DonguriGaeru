@@ -61,7 +61,7 @@ class InfoExtension : Extension() {
                         }
                     } else {
                         respond {
-                            content = "**Error:** That match could not be found."
+                            content = "**Error:** Could not find that match"
                         }
                     }
                 }
