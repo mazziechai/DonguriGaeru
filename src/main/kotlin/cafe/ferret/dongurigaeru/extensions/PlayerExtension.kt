@@ -113,6 +113,27 @@ class PlayerExtension : Extension() {
                 }
             }
         }
+        publicSlashCommand(::ChangeNameCommandArguments) {
+            name = "changename"
+            description = "Change your name to something else."
+
+            action {
+                val player = playerCollection.getByDiscord(user.id)
+
+                if (player != null) {
+                    player.name = arguments.newName
+                    playerCollection.set(player)
+
+                    respond {
+                        content = "Your name has been changed to **${arguments.newName}**"
+                    }
+                } else {
+                    respond {
+                        content = "**Error:** You are not registered. Try using /register first"
+                    }
+                }
+            }
+        }
     }
 
     inner class PlayerRegistrationCommandArguments : Arguments() {
@@ -134,6 +155,13 @@ class PlayerExtension : Extension() {
         val player2 by string {
             name = "player2"
             description = "The other player in the match."
+        }
+    }
+
+    inner class ChangeNameCommandArguments : Arguments() {
+        val newName by string {
+            name = "newName"
+            description = "The new name you wish to go by."
         }
     }
 }
