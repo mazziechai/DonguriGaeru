@@ -22,6 +22,8 @@ import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
 import cafe.ferret.dongurigaeru.formatMatch
 import com.kotlindiscord.kord.extensions.commands.Arguments
+import com.kotlindiscord.kord.extensions.commands.application.slash.converters.ChoiceEnum
+import com.kotlindiscord.kord.extensions.commands.application.slash.converters.impl.enumChoice
 import com.kotlindiscord.kord.extensions.commands.application.slash.publicSubCommand
 import com.kotlindiscord.kord.extensions.commands.converters.impl.string
 import com.kotlindiscord.kord.extensions.extensions.Extension
@@ -64,6 +66,36 @@ class InfoExtension : Extension() {
                     }
                 }
             }
+
+            publicSubCommand(::PlayerInfoCommandArguments) {
+                name = "player"
+                description = "Get information for a player."
+
+                action {
+                    val player = when (arguments.choice) {
+                        SearchType.ID -> {
+                            playerCollection.get(arguments.value.toInt(16))
+                        }
+                        SearchType.NAME -> {
+                            playerCollection.getByName(arguments.value)
+                        }
+                    }
+
+                    if (player != null) {
+                        val matches = matchCollection.getByPlayer(player)
+
+                        respond {
+                            content = "`${player._id.toString(16)}`: **${player.name}**\n" +
+                                    "Matches: ${matches.count()}\n" +
+                                    "Match listing not implemented yet"
+                        }
+                    } else {
+                        respond {
+                            content = "**Error:** Could not find that player"
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -77,6 +109,37 @@ class InfoExtension : Extension() {
                     id.toIntOrNull(16) == null
                 }
             }
+        }
+    }
+
+    inner class PlayerInfoCommandArguments : Arguments() {
+        val choice: SearchType by enumChoice {
+            name = "searchType"
+            description = "Search by name or ID."
+
+            typeName = "SearchType"
+
+            choice("name", SearchType.NAME)
+            choice("id", SearchType.ID)
+        }
+        val value: String by string {
+            name = "value"
+            description = "The ID or name, based on what you selected for the search type."
+
+            validate() {
+                failIf("That is not a valid ID.") {
+                    choice == SearchType.ID && value.toIntOrNull(16) == null
+                }
+            }
+        }
+    }
+
+    enum class SearchType : ChoiceEnum {
+        ID {
+            override val readableName = "id"
+        },
+        NAME {
+            override val readableName = "name"
         }
     }
 }
