@@ -58,10 +58,10 @@ class AdminExtension : Extension() {
 
                     // If either are null, create a new player and save it to the database
                     if (player1 == null) {
-                        player1 = playerCollection.new(arguments.player1, null)
+                        player1 = playerCollection.new(arguments.player1, null, null)
                     }
                     if (player2 == null) {
-                        player2 = playerCollection.new(arguments.player2, null)
+                        player2 = playerCollection.new(arguments.player2, null, null)
                     }
 
                     val match = matchCollection.new(player1, arguments.score1, arguments.score2, player2)

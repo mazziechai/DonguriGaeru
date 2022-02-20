@@ -16,19 +16,10 @@
  *
  */
 
-package cafe.ferret.dongurigaeru.database.entities
+package cafe.ferret.dongurigaeru.utils
 
-import cafe.ferret.dongurigaeru.database.Entity
 import dev.kord.common.Locale
-import dev.kord.common.entity.Snowflake
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 
-@Serializable
-data class Player(
-    override val _id: Int,
-    var name: String,
-    var discord: Snowflake?,
-    val created: Instant,
-    var locale: Locale?
-) : Entity<Int>
+interface DiscordLocale {
+    val localeObject: Locale
+}

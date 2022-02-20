@@ -21,6 +21,7 @@ package cafe.ferret.dongurigaeru.database.collections
 import cafe.ferret.dongurigaeru.database.Collection
 import cafe.ferret.dongurigaeru.database.Database
 import cafe.ferret.dongurigaeru.database.entities.Player
+import dev.kord.common.Locale
 import dev.kord.common.entity.Snowflake
 import kotlinx.datetime.Clock
 import org.bson.conversions.Bson
@@ -34,7 +35,7 @@ class PlayerCollection : KoinComponent {
     private val database: Database by inject()
     private val col = database.mongo.getCollection<Player>(name)
 
-    suspend fun new(name: String, discord: Snowflake?): Player {
+    suspend fun new(name: String, discord: Snowflake?, locale: Locale?): Player {
         // Generating a new random ID, making sure it doesn't conflict before putting it in
         var random: Int
 
@@ -42,7 +43,7 @@ class PlayerCollection : KoinComponent {
             random = Random.nextInt(0x1000, 0xFFFF)
         } while (count(Player::_id eq random) != 0L)
 
-        val player = Player(random, name, discord, Clock.System.now())
+        val player = Player(random, name, discord, Clock.System.now(), locale)
         set(player)
 
         return player

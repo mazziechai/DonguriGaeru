@@ -16,19 +16,14 @@
  *
  */
 
-package cafe.ferret.dongurigaeru.database.entities
+package cafe.ferret.dongurigaeru.utils
 
-import cafe.ferret.dongurigaeru.database.Entity
+import com.kotlindiscord.kord.extensions.commands.application.slash.converters.ChoiceEnum
 import dev.kord.common.Locale
-import dev.kord.common.entity.Snowflake
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 
-@Serializable
-data class Player(
-    override val _id: Int,
-    var name: String,
-    var discord: Snowflake?,
-    val created: Instant,
-    var locale: Locale?
-) : Entity<Int>
+enum class DonguriGaeruLocale : ChoiceEnum, DiscordLocale {
+    EN_US {
+        override val readableName = "English (United States)"
+        override val localeObject = Locale.ENGLISH_UNITED_STATES
+    }
+}

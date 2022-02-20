@@ -22,7 +22,9 @@ import cafe.ferret.dongurigaeru.database.collections.MatchCollection
 import cafe.ferret.dongurigaeru.database.collections.PlayerCollection
 import cafe.ferret.dongurigaeru.database.entities.Player
 import cafe.ferret.dongurigaeru.formatMatch
+import cafe.ferret.dongurigaeru.utils.DonguriGaeruLocale
 import com.kotlindiscord.kord.extensions.commands.Arguments
+import com.kotlindiscord.kord.extensions.commands.application.slash.converters.impl.enumChoice
 import com.kotlindiscord.kord.extensions.commands.converters.impl.int
 import com.kotlindiscord.kord.extensions.commands.converters.impl.string
 import com.kotlindiscord.kord.extensions.extensions.Extension
@@ -80,7 +82,7 @@ class PlayerExtension : Extension() {
                     return@action
                 }
 
-                val player = playerCollection.new(arguments.name, user.id)
+                val player = playerCollection.new(arguments.name, user.id, arguments.locale.localeObject)
                 respond {
                     content = "You have been registered as ${arguments.name} with ID ${player._id.toString(16)}"
                 }
@@ -101,7 +103,7 @@ class PlayerExtension : Extension() {
 
                 var player2 = playerCollection.getByName(arguments.player2)
                 if (player2 == null) {
-                    player2 = playerCollection.new(arguments.player2, null)
+                    player2 = playerCollection.new(arguments.player2, null, null)
                 }
 
                 val match = matchCollection.new(player1, arguments.score1, arguments.score2, player2)
@@ -115,7 +117,7 @@ class PlayerExtension : Extension() {
         }
         publicSlashCommand(::ChangeNameCommandArguments) {
             name = "changename"
-            description = "Change your name to something else."
+            description = "Change your name to something new."
 
             action {
                 val player = playerCollection.getByDiscord(user.id)
@@ -139,7 +141,15 @@ class PlayerExtension : Extension() {
     inner class PlayerRegistrationCommandArguments : Arguments() {
         val name by string {
             name = "name"
-            description = "The name you wish to register under. This can be changed in the future."
+            description = "The name you wish to register under. This can be changed later."
+        }
+        val locale: DonguriGaeruLocale by enumChoice {
+            name = "locale"
+            description = "The language you wish to use Donguri Gaeru in. This can be changed later."
+
+            typeName = "DonguriGaeruLocale"
+
+            choice("English (United States)", DonguriGaeruLocale.EN_US)
         }
     }
 
